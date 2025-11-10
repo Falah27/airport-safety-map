@@ -1,0 +1,263 @@
+/* Sidebar Container Utama */
+.sidebar {
+  width: 370px; 
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #1A202C;
+  color: #E2E8F0;
+  padding: 24px;
+  box-shadow: -8px 0px 20px rgba(0, 0, 0, 0.3);
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
+}
+
+.sidebar.visible {
+  transform: translateX(0%);
+}
+
+.sidebar-content {
+  opacity: 0;
+  transition: opacity 0.2s ease-in 0.1s;
+  padding-bottom: 80px;
+}
+
+.sidebar.visible .sidebar-content {
+  opacity: 1;
+}
+
+/* Tombol Tutup (X) */
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #2D3748;
+  color: #E2E8F0;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: #4A5568;
+}
+
+/* Header (Nama & Kota) */
+.sidebar-header {
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+
+.sidebar-header h2 {
+  font-size: 1.75rem;
+  color: #FFF;
+  margin: 0;
+}
+
+.sidebar-header p {
+  font-size: 1rem;
+  color: #A0AEC0;
+  margin: 4px 0 0 0;
+}
+
+/* Garis Pemisah */
+.divider {
+  border: none;
+  border-top: 1px solid #2D3748;
+  margin: 20px 0;
+}
+
+/* Section (Rangkuman & Detail) */
+.sidebar-section h3 {
+  font-size: 0.875rem;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+
+/* REKOMENDASI #1: Grid 3 kolom untuk Total, Open, Pending */
+/* Grid Rangkuman Laporan (3 Kolom) */
+.stats-grid-reports {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* <-- KEMBALIKAN KE 3 KOLOM */
+  gap: 16px; 
+}
+
+.stats-grid-reports .stat-item {
+  display: flex;
+  flex-direction: column;
+  text-align: center; /* <-- BUAT RAPI DI TENGAH */
+}
+
+.stats-grid-reports .stat-value {
+  font-size: 1.5rem; /* <-- PERKECIL FONT AGAR MUAT */
+  font-weight: bold;
+  color: #FFF;
+}
+
+.stats-grid-reports .stat-label {
+  font-size: 0.75rem;
+  color: #718096;
+  text-transform: uppercase;
+}
+
+/* Warna-warni untuk status */
+.stats-grid-reports .stat-value.open {
+  color: #ffc107; /* Kuning */
+}
+.stats-grid-reports .stat-value.pending {
+  color: #dc3545; /* Merah */
+}
+
+.stats-grid-reports .stat-item {
+  display: flex;
+  flex-direction: column;
+  text-align: center; /* Pusatkan teks */
+}
+
+.stats-grid-reports .stat-value {
+  font-size: 1.5rem; /* Perkecil font agar muat */
+  font-weight: bold;
+  color: #FFF;
+}
+
+.stats-grid-reports .stat-label {
+  font-size: 0.75rem;
+  color: #718096;
+  text-transform: uppercase;
+}
+
+/* Warna-warni untuk status */
+.stats-grid-reports .stat-value.open {
+  color: #ffc107; /* Kuning */
+}
+.stats-grid-reports .stat-value.pending {
+  color: #dc3545; /* Merah */
+}
+
+/* Rincian Kategori (VERSI DAFTAR SIMPEL) */
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2D3748; /* Warna item detail */
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.category-name {
+  font-size: 0.9rem;
+  color: #CBD5E0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+.category-count {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #FFF;
+  background-color: #4A5568; /* Latar belakang angka */
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 30px; 
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.no-data-text {
+  font-size: 0.9rem;
+  color: #718096;
+  font-style: italic;
+  margin: 0;
+  padding: 10px 0;
+}
+
+/* Item Detail (Dummy Safety) */
+.detail-item {
+  background-color: #2D3748;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.detail-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detail-item-header h4 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #FFF;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-badge.rating-a {
+  background-color: #28a745;
+  color: #FFF;
+}
+.status-badge.rating-b {
+  background-color: #ffc107;
+  color: #1A202C;
+}
+.status-badge.rating-c {
+  background-color: #dc3545;
+  color: #FFF;
+}
+.status-badge.rating-default {
+  background-color: #718096;
+  color: #E2E8F0;
+}
+
+.detail-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detail-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #CBD5E0;
+  margin-bottom: 12px;
+}
+
+.detail-points li:last-child {
+  margin-bottom: 0;
+}
+
+.detail-points li svg {
+  color: #4A90E2;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
