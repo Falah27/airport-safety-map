@@ -81,3 +81,46 @@
   color: #E2E8F0; 
   font-weight: 500;
 }
+
+/* Container Admin di KIRI BAWAH (Style Dashboard Widget) */
+.admin-controls {
+  position: fixed;
+  bottom: 30px; 
+  left: 20px;   
+  z-index: 1001;
+  
+  /* Styling Baru (Lebih Transparan & Elegan) */
+  background-color: rgba(26, 32, 44, 0.9); /* Samakan opacity dengan Search Bar */
+  backdrop-filter: blur(4px); /* Efek kaca buram */
+  border-radius: 8px; 
+  padding: 6px 12px; 
+  
+  /* Shadow & Border yang lebih halus */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Border semi-transparan */
+  
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Kita ubah separator biar lebih pendek */
+.separator {
+  width: 1px;
+  height: 16px; /* Lebih pendek */
+  background-color: #4A5568;
+  margin: 0 2px;
+}
+
+.separator {
+  width: 1px;
+  height: 24px;
+  background-color: #4A5568;
+  margin: 0 4px;
+}

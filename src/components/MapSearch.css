@@ -1,0 +1,18 @@
+.search-container {
+  position: absolute;
+  top: 20px;
+  left: 50%; /* Posisikan di tengah */
+  transform: translateX(-50%); /* Trik centering */
+  width: 400px;
+  z-index: 1001; /* Di atas peta, di bawah sidebar */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Media query untuk layar HP */
+@media (max-width: 600px) {
+  .search-container {
+    width: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
