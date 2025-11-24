@@ -82,22 +82,19 @@
   font-weight: 500;
 }
 
-/* Container Admin di KIRI BAWAH (Style Dashboard Widget) */
 .admin-controls {
   position: fixed;
   bottom: 30px; 
   left: 20px;   
   z-index: 1001;
   
-  /* Styling Baru (Lebih Transparan & Elegan) */
-  background-color: rgba(26, 32, 44, 0.9); /* Samakan opacity dengan Search Bar */
-  backdrop-filter: blur(4px); /* Efek kaca buram */
+  background-color: rgba(26, 32, 44, 0.9); 
+  backdrop-filter: blur(4px); 
   border-radius: 8px; 
   padding: 6px 12px; 
   
-  /* Shadow & Border yang lebih halus */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Border semi-transparan */
+  border: 1px solid rgba(255, 255, 255, 0.1); 
   
   display: flex;
   align-items: center;
