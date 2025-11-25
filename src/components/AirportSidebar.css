@@ -1,4 +1,4 @@
-/* Sidebar Container Utama */
+/* Sidebar Container */
 .sidebar {
   width: 370px; 
   height: 100vh;
@@ -13,10 +13,15 @@
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
   overflow-y: auto;
-  /* Sembunyikan scrollbar utama sidebar biar bersih */
+  
+  /* Scrollbar Sidebar */
   scrollbar-width: thin;
   scrollbar-color: #4A5568 #1A202C;
 }
+
+.sidebar::-webkit-scrollbar { width: 8px; }
+.sidebar::-webkit-scrollbar-track { background: #1A202C; }
+.sidebar::-webkit-scrollbar-thumb { background-color: #4A5568; border-radius: 10px; }
 
 .sidebar.visible {
   transform: translateX(0%);
@@ -25,171 +30,275 @@
 .sidebar-content {
   opacity: 0;
   transition: opacity 0.2s ease-in 0.1s;
-  padding-bottom: 80px; 
+  padding-bottom: 80px;
 }
+.sidebar.visible .sidebar-content { opacity: 1; }
 
-.sidebar.visible .sidebar-content {
-  opacity: 1;
-}
-
-/* Tombol Tutup (X) */
+/* Header & Tombol Close */
 .close-btn {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background: #2D3748;
-  color: #E2E8F0;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.2rem;
-  transition: background-color 0.2s;
+  top: 16px; right: 16px;
+  background: #2D3748; color: #E2E8F0; border: none;
+  border-radius: 50%; width: 32px; height: 32px;
+  cursor: pointer; display: flex; justify-content: center; align-items: center;
+  font-size: 1.2rem; transition: background-color 0.2s;
 }
 .close-btn:hover { background: #4A5568; }
 
-/* Header */
 .sidebar-header { margin-top: 32px; margin-bottom: 16px; }
-.sidebar-header h2 { font-size: 1.75rem; color: #FFF; margin: 0; }
+.sidebar-header h1 { font-size: 1.75rem; color: #FFF; margin: 0; }
 .sidebar-header p { font-size: 1rem; color: #A0AEC0; margin: 4px 0 0 0; }
+.divider { border: none; border-top: 1px solid #2D3748; margin: 15px 0; }
 
-.divider { border: none; border-top: 1px solid #2D3748; margin: 10px 0; }
-
-/* Section Header */
+/* Sections */
 .sidebar-section h3 {
-  font-size: 0.875rem;
-  color: #A0AEC0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 16px;
+  font-size: 0.875rem; color: #A0AEC0; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 16px;
 }
+.subtitle { font-size: 0.7rem; font-weight: normal; color: #718096; text-transform: none; }
 
-/* --- CHART SCROLL WRAPPER (CSS BARU) --- */
+/* --- WRAPPER GRAFIK SCROLLABLE (CSS Biasa) --- */
 .chart-scroll-wrapper {
   width: 100%;
-  overflow-x: auto; /* Ijinkan scroll horizontal */
-  background-color: #2D3748;
+  overflow-x: auto; 
+  /* background-color: #2D3748; */
   border-radius: 8px;
   padding: 10px;
-  /* Styling Scrollbar Horizontal */
+  box-sizing: border-box; /* <-- PENTING: Agar padding dihitung dalam lebar */
+  
+  /* Scrollbar Grafik */
   scrollbar-width: thin;
   scrollbar-color: #4A90E2 #2D3748;
 }
+.chart-scroll-wrapper::-webkit-scrollbar { height: 8px; }
+.chart-scroll-wrapper::-webkit-scrollbar-track { background: #2D3748; border-radius: 8px; }
+.chart-scroll-wrapper::-webkit-scrollbar-thumb { background-color: #4A5568; border-radius: 10px; }
 
-/* Webkit Scrollbar (Chrome/Safari) */
-.chart-scroll-wrapper::-webkit-scrollbar {
-  height: 8px;
-}
-.chart-scroll-wrapper::-webkit-scrollbar-track {
-  background: #2D3748;
-  border-radius: 8px;
-}
-.chart-scroll-wrapper::-webkit-scrollbar-thumb {
-  background-color: #4A5568;
-  border-radius: 10px;
-}
-/* --------------------------------------- */
-
-
-/* Grid Rangkuman 2+1 */
+/* Grid Rangkuman 2 + 1 */
 .stats-grid-reports-2plus1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px; 
+  gap: 16px;
 }
-.stats-grid-reports-2plus1 .stat-item {
-  display: flex;
-  flex-direction: column;
-  text-align: center; 
-  background-color: #2D3748; 
-  padding: 12px;
-  border-radius: 8px;
+.stat-item {
+  display: flex; flex-direction: column; text-align: center;
+  background-color: #2D3748; padding: 12px; border-radius: 8px;
 }
 .stat-item-full {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  background-color: #2D3748;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 10px; 
+  display: flex; flex-direction: column;
+  background-color: #2D3748; padding: 12px; border-radius: 8px;
+  margin-top: 5px;
 }
-.stats-grid-reports-2plus1 .stat-label {
-  font-size: 0.75rem;
-  color: #718096;
-  text-transform: uppercase;
-  margin-bottom: 8px; 
-  text-align: left; 
-}
-.stats-grid-reports-2plus1 .stat-value {
-  font-size: 2rem; 
-  font-weight: bold;
-  color: #FFF;
-  text-align: left; 
-}
+.stat-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; margin-bottom: 8px; text-align: left; }
+.stat-value { font-size: 2rem; font-weight: bold; color: #FFF; text-align: left; }
+.stat-value.open { color: #ffc107; }
+
 .top-incident-content {
-  display: flex;
-  justify-content: space-between; 
-  align-items: center;
+  display: flex; justify-content: space-between; align-items: center; gap: 15px;
 }
 .stat-value-name {
-  font-size: 1.5rem; 
-  font-weight: bold;
-  color: #FFF;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 15px;
-}
-.stats-grid-reports-2plus1 .stat-value.open {
-  font-size: 2rem; 
-  color: #ffc107; 
-  flex-shrink: 0; 
+  font-size: 1.3rem; font-weight: bold; color: #FFF;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Detail Laporan & List */
-.monthly-reports-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 10px;
-  max-height: 400px; 
-  overflow-y: auto;
-  padding-right: 5px; 
-}
-.report-card {
-  background-color: #2D3748;
-  border-left: 4px solid #F6E05E;
-  padding: 12px;
-  border-radius: 4px;
-}
+/* Detail Reports List */
+.detail-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.monthly-reports-list { display: flex; flex-direction: column; gap: 12px; }
+.report-card { background-color: #2D3748; border-left: 4px solid #F6E05E; padding: 12px; border-radius: 4px; }
 .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .report-date { font-size: 0.8rem; color: #A0AEC0; display: flex; align-items: center; gap: 5px; }
 .report-category { font-size: 0.8rem; font-weight: bold; color: #FFF; background-color: #4A5568; padding: 2px 6px; border-radius: 4px; }
 .report-desc { font-size: 0.85rem; color: #E2E8F0; line-height: 1.4; margin: 0 0 8px 0; }
-.report-status { font-size: 0.7rem; color: #68D391; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #68D391; padding: 1px 5px; border-radius: 3px; }
+.report-status { font-size: 0.7rem; color: #68D391; border: 1px solid #68D391; padding: 1px 5px; border-radius: 3px; }
 
-.category-list { display: flex; flex-direction: column; gap: 12px; }
-.category-item { display: flex; justify-content: space-between; align-items: center; background-color: #2D3748; padding: 10px 14px; border-radius: 6px; }
-.category-name { font-size: 0.9rem; color: #CBD5E0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-.category-count { font-size: 1.1rem; font-weight: bold; color: #FFF; background-color: #4A5568; padding: 2px 8px; border-radius: 4px; min-width: 30px; text-align: center; flex-shrink: 0; }
-.no-data-text { font-size: 0.9rem; color: #718096; font-style: italic; margin: 0; padding: 10px 0; }
+/* Buttons & Texts */
+.btn-close-detail {
+  display: flex; align-items: center; gap: 4px;
+  background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #A0AEC0; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px;
+  cursor: pointer; transition: all 0.2s ease;
+}
+.btn-close-detail:hover { background-color: rgba(255, 255, 255, 0.2); color: #FFF; }
 
-/* Tombol Tutup Detail */
-.btn-close-detail { display: flex; align-items: center; gap: 4px; background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #A0AEC0; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; }
-.btn-close-detail:hover { background-color: rgba(255, 255, 255, 0.2); color: #FFF; border-color: rgba(255, 255, 255, 0.4); }
-
-/* Utility */
-.flex { display: flex; }
-.justify-between { justify-content: space-between; }
-.items-center { align-items: center; }
-.mb-2 { margin-bottom: 8px; }
-.text-xs { font-size: 0.75rem; }
-.hover\:text-white:hover { color: white; }
-.chart-container { display: flex; align-items: center; justify-content: center; height: 100%; }
+.loading-text, .no-data-text { font-size: 0.9rem; color: #718096; font-style: italic; text-align: center; padding: 20px; }
 .fade-in { animation: fadeIn 0.3s ease-in; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* List Kategori Simple */
+.category-list { display: flex; flex-direction: column; gap: 12px; }
+.category-item { display: flex; justify-content: space-between; align-items: center; background-color: #2D3748; padding: 10px 14px; border-radius: 6px; }
+.category-name { font-size: 0.9rem; color: #CBD5E0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.category-count { font-size: 1.1rem; font-weight: bold; color: #FFF; background-color: #4A5568; padding: 2px 8px; border-radius: 4px; min-width: 30px; text-align: center; }
+
+/* --- Date Picker Styles --- */
+/* --- MODERN DATE PICKER --- */
+
+.date-filter-wrapper {
+  margin-top: 15px;
+  background-color: rgba(37, 46, 62, 0.6); /* Semi transparan */
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #4A5568;
+  transition: all 0.3s ease;
+}
+
+/* Efek Glow kalau filter aktif */
+.date-filter-wrapper.active-filter {
+  border-color: #4A90E2;
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.15);
+  background-color: rgba(37, 46, 62, 0.9);
+}
+
+/* Header Filter */
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #A0AEC0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-icon {
+  font-size: 1rem;
+  color: #4A90E2;
+}
+
+/* Tombol Reset (Icon Only) */
+.btn-reset-icon {
+  background: transparent;
+  border: none;
+  color: #FC8181; /* Merah soft */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-reset-icon:hover {
+  background-color: rgba(252, 129, 129, 0.15);
+  transform: rotate(180deg); /* Animasi putar saat hover! */
+  color: #F56565;
+}
+
+/* Group Input (Kapsul Gabungan) */
+.date-input-group {
+  display: flex;
+  align-items: center;
+  background-color: #171923; /* Lebih gelap dari sidebar */
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid #2D3748;
+}
+
+/* Item Tanggal Individual */
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  position: relative;
+}
+
+.date-label {
+  font-size: 0.6rem;
+  color: #718096;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.date-input-modern {
+  background: transparent;
+  border: none;
+  color: #FFF;
+  font-size: 0.85rem;
+  font-weight: 500;
+  width: 100%;
+  outline: none;
+  color-scheme: dark; /* Ikon kalender browser jadi putih */
+  cursor: pointer;
+}
+
+/* Garis Pemisah Vertikal Kecil */
+.date-separator-line {
+  width: 1px;
+  height: 24px;
+  background-color: #4A5568;
+  margin: 0 2px;
+}
+
+/* Hover effect pada input */
+.date-input-group:focus-within {
+  border-color: #4A90E2;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  color: #A0AEC0;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.btn-reset-filter {
+  background: transparent;
+  border: 1px solid #FC8181;
+  color: #FC8181;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-reset-filter:hover {
+  background-color: #FC8181;
+  color: white;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-input {
+  flex: 1;
+  background-color: #1A202C;
+  border: 1px solid #4A5568;
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color-scheme: dark; /* Agar ikon kalender bawaan jadi putih */
+}
+.date-input:focus {
+  border-color: #4A90E2;
+  outline: none;
+}
+
+.date-separator {
+  font-size: 0.8rem;
+  color: #718096;
+}
+

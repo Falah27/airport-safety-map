@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import airportIcon from '../assets/airport.png';
 import { MdLocationOn } from 'react-icons/md'; 
+import HeatmapLayer from './HeatmapLayer';
 
 // --- KONSTANTA GLOBAL ---
 const INDONESIA_CENTER = [-2.5489, 118.0149];
@@ -51,62 +52,59 @@ const MapAnimator = ({ selectedAirport }) => {
 
 // ---- KOMPONEN MapDisplay UTAMA ----
 // Perhatikan sekarang dia menerima 'airports' sebagai prop
-const MapDisplay = ({ airports, onMarkerClick, selectedAirport }) => { 
-  
-  // KITA HAPUS SEMUA LOGIKA FETCH DARI SINI
-  
+const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode }) => { // Terima prop baru
   const customIcon = createCustomAirportIcon();
 
   return (
     <MapContainer 
       center={INDONESIA_CENTER}
       zoom={DEFAULT_ZOOM}
-      style={{ height: '100vh', width: '100%' }}
+      className="w-full h-full outline-none"
       scrollWheelZoom={true} 
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; OpenStreetMap'
       />
       
-      {/* Kita sekarang map 'airports' dari props */}
-      {airports.map(airport => (
-        <Marker
-          key={airport.id}
-          position={airport.coordinates}
-          icon={customIcon}
-          eventHandlers={{
-            click: () => {
-              onMarkerClick(airport);
-            },
-            mouseover: (e) => e.target.openPopup(),
-            mouseout: (e) => e.target.closePopup(),
-          }}
-        >
-          {/* Popup versi terakhir (dengan Total Laporan) */}
-          <Popup>
-            <div className="custom-popup">
-              <div className="popup-header">
-                <MdLocationOn />
-                <h4>{airport.name}</h4>
-              </div>
-              <div className="popup-content">
-                <div className="popup-row">
-                  <span className="popup-label">KOTA</span>
-                  <span className="popup-value">{airport.city}</span>
+      {/* LOGIKA SWITCH: Jika Heatmap Mode ON -> Tampilkan Heatmap, Jika OFF -> Tampilkan Marker */}
+      {isHeatmapMode ? (
+        <HeatmapLayer data={airports} />
+      ) : (
+        airports.map(airport => (
+            <Marker
+            key={airport.id}
+            position={airport.coordinates}
+            icon={customIcon}
+            eventHandlers={{
+                click: () => onMarkerClick(airport),
+                mouseover: (e) => e.target.openPopup(),
+                mouseout: (e) => e.target.closePopup(),
+            }}
+            >
+              <Popup>
+              <div className="custom-popup">
+                <div className="popup-header">
+                  <MdLocationOn />
+                  <h4>{airport.name}</h4>
                 </div>
-                <div className="popup-row">
-                  <span className="popup-label">TOTAL LAPORAN</span>
-                  <span className="popup-value">{airport.total_reports}</span>
+                <div className="popup-content">
+                  <div className="popup-row">
+                    <span className="popup-label">KOTA</span>
+                    <span className="popup-value">{airport.city}</span>
+                  </div>
+                  <div className="popup-row">
+                    <span className="popup-label">TOTAL LAPORAN</span>
+                    <span className="popup-value">{airport.total_reports}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+            </Popup>
+            </Marker>
+        ))
+      )}
 
       <MapAnimator selectedAirport={selectedAirport} />
-
     </MapContainer>
   );
 };

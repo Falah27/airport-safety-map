@@ -5,10 +5,11 @@ import MapSearch from './components/MapSearch';
 import UploadButton from './components/UploadButton';
 import DeleteButton from './components/DeleteButton';
 import './App.css'; 
+import { MdLocalFireDepartment, MdMap } from 'react-icons/md'; // Tambah ini
 
 function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
-
+  const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [airports, setAirports] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
 
@@ -56,9 +57,24 @@ function App() {
         selectedAirport={selectedAirport}
       />
       
+      {/* ADMIN CONTROLS (Kiri Bawah) */}
       <div className="admin-controls">
+        
+        {/* Tombol Heatmap */}
+        <button 
+            onClick={() => setIsHeatmapMode(!isHeatmapMode)}
+            className={`btn-toggle-heatmap ${isHeatmapMode ? 'active' : ''}`}
+            title={isHeatmapMode ? "Mode Marker" : "Mode Heatmap"}
+        >
+            {isHeatmapMode ? <MdMap size={22} /> : <MdLocalFireDepartment size={22} />}
+        </button>
+
+        <div className="separator"></div>
+
         <DeleteButton />
-        <div className="separator"></div> 
+        
+        <div className="separator"></div>
+        
         <UploadButton />
       </div>
       
@@ -66,6 +82,7 @@ function App() {
         airports={airports} 
         onMarkerClick={handleAirportSelect} 
         selectedAirport={selectedAirport}
+        isHeatmapMode={isHeatmapMode}
       />
     </div>
   );
