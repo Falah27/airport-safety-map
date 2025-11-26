@@ -4,14 +4,16 @@ import AirportSidebar from './components/AirportSidebar';
 import MapSearch from './components/MapSearch'; 
 import UploadButton from './components/UploadButton';
 import DeleteButton from './components/DeleteButton';
+import { Toaster } from 'react-hot-toast';
 import './App.css'; 
-import { MdLocalFireDepartment, MdMap } from 'react-icons/md'; // Tambah ini
+import { MdSettings, MdClose, MdMap, MdLocalFireDepartment } from 'react-icons/md';
 
 function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
   const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [airports, setAirports] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const apiUrl = 'http://localhost:8000/api/airports'; 
@@ -46,6 +48,30 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* 2. PASANG INI (Konfigurasi Dark Mode) */}
+      <Toaster 
+        position="center"
+        toastOptions={{
+          style: {
+            background: '#2D3748',
+            color: '#fff',
+            border: '1px solid #4A5568',
+          },
+          success: {
+            iconTheme: {
+              primary: '#68D391',
+              secondary: '#1A202C',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#FC8181',
+              secondary: '#1A202C',
+            },
+          },
+        }}
+      />
+
       <AirportSidebar 
         airport={selectedAirport} 
         onClose={handleCloseSidebar} 
@@ -57,26 +83,52 @@ function App() {
         selectedAirport={selectedAirport}
       />
       
-      {/* ADMIN CONTROLS (Kiri Bawah) */}
-      <div className="admin-controls">
+      {/* --- ADMIN SPEED DIAL (KIRI BAWAH) --- */}
+      <div className="admin-fab-container">
         
-        {/* Tombol Heatmap */}
+        {/* 1. TOMBOL UTAMA (GEAR) - DIRENDER PALING BAWAH SECARA VISUAL */}
         <button 
-            onClick={() => setIsHeatmapMode(!isHeatmapMode)}
-            className={`btn-toggle-heatmap ${isHeatmapMode ? 'active' : ''}`}
-            title={isHeatmapMode ? "Mode Marker" : "Mode Heatmap"}
+            className={`admin-fab-main ${isMenuOpen ? 'rotate' : ''}`} 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            title="Admin Menu"
         >
-            {isHeatmapMode ? <MdMap size={22} /> : <MdLocalFireDepartment size={22} />}
+            {isMenuOpen ? <MdClose size={24} /> : <MdSettings size={24} />}
         </button>
 
-        <div className="separator"></div>
+        {/* 2. MENU ITEMS (Akan muncul DI ATAS tombol Gear) */}
+        <div className={`admin-menu-items ${isMenuOpen ? 'open' : ''}`}>
+            
+            {/* Item 1 (Paling Bawah/Dekat Gear): Heatmap */}
+            <div className="fab-item-wrapper">
+                <span className="fab-tooltip">{isHeatmapMode ? "Mode Normal" : "Mode Heatmap"}</span>
+                <button 
+                    onClick={() => setIsHeatmapMode(!isHeatmapMode)}
+                    className={`fab-child-btn ${isHeatmapMode ? 'active' : ''}`}
+                >
+                    {isHeatmapMode ? <MdMap size={20} /> : <MdLocalFireDepartment size={20} />}
+                </button>
+            </div>
 
-        <DeleteButton />
-        
-        <div className="separator"></div>
-        
-        <UploadButton />
+            {/* Item 2 (Tengah): Delete */}
+            <div className="fab-item-wrapper">
+                <span className="fab-tooltip">Hapus Data</span>
+                <div className="fab-child">
+                    <DeleteButton />
+                </div>
+            </div>
+
+            {/* Item 3 (Paling Atas): Upload */}
+            <div className="fab-item-wrapper">
+                <span className="fab-tooltip">Upload Data</span>
+                <div className="fab-child">
+                    <UploadButton />
+                </div>
+            </div>
+
+        </div>
+
       </div>
+      {/* ------------------------------------- */}
       
       <MapDisplay 
         airports={airports} 
@@ -86,8 +138,6 @@ function App() {
       />
     </div>
   );
-
-  
 }
 
 export default App;

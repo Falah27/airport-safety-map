@@ -123,29 +123,133 @@
 }
 
 /* Container Admin di KIRI BAWAH */
-.admin-controls {
+/* --- ADMIN FAB CONTAINER (Wadah Utama) --- */
+.admin-fab-container {
   position: fixed;
-  bottom: 30px; 
-  left: 20px;   
+  bottom: 30px; /* Jarak dari bawah */
+  left: 20px;   /* Jarak dari kiri */
   z-index: 1001;
   
-  /* --- KUNCI AGAR KE SAMPING (HORIZONTAL) --- */
-  display: flex;         
-  flex-direction: row;   
+  display: flex;
+  /* INI KUNCINYA: column-reverse bikin item pertama ada di bawah, item selanjutnya naik ke atas */
+  flex-direction: column-reverse; 
   align-items: center;
-  gap: 12px;
-  /* ------------------------------------------ */
+  gap: 15px; /* Jarak antar tombol */
+}
+
+/* --- TOMBOL UTAMA (GEAR/CLOSE) --- */
+.admin-fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #1A202C;
+  color: #E2E8F0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek Membal */
+  z-index: 10;
+}
+
+.admin-fab-main:hover {
+  transform: scale(1.1);
+  border-color: #4A90E2;
+  color: #4A90E2;
+}
+
+.admin-fab-main.rotate {
+  transform: rotate(135deg);
+  background-color: #E53E3E;
+  color: white;
+  border-color: transparent;
+}
+
+/* --- CONTAINER MENU ITEMS (Anak-anaknya) --- */
+.admin-menu-items {
+  display: flex;
+  /* Anak-anak juga disusun dari bawah ke atas */
+  flex-direction: column-reverse; 
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 10px; /* Jarak dari tombol utama */
   
-  /* Styling Kapsul */
-  background-color: rgba(26, 32, 44, 0.9); 
-  backdrop-filter: blur(4px);
-  border-radius: 8px; 
-  padding: 8px 12px; 
+  /* State Awal: Sembunyi */
+  opacity: 0;
+  transform: translateY(20px) scale(0.8); /* Turun dikit biar efek munculnya naik */
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+/* State Aktif: Muncul */
+.admin-menu-items.open {
+  opacity: 1;
+  transform: translateY(0) scale(1); /* Naik ke posisi asli */
+  pointer-events: auto;
+}
+
+/* --- WRAPPER PER ITEM --- */
+.fab-item-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* --- TOOLTIP (Label di Kanan Tombol) --- */
+.fab-tooltip {
+  position: absolute;
+  left: 55px; /* Muncul di KANAN tombol */
+  background-color: rgba(26, 32, 44, 0.95);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
   
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  
-  animation: slideUp 0.5s ease-out;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.fab-item-wrapper:hover .fab-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* --- STYLE PAKSA UNTUK TOMBOL KECIL --- */
+/* Ini memastikan tombol Upload & Delete jadi bulat kecil */
+.fab-child button, 
+.fab-child-btn {
+  width: 45px !important;
+  height: 45px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #2D3748 !important; 
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #E2E8F0 !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4) !important;
+  transition: all 0.2s !important;
+}
+
+.fab-child button:hover,
+.fab-child-btn:hover {
+  background-color: #4A90E2 !important;
+  color: white !important;
+  transform: scale(1.1);
+}
+
+.fab-child-btn.active {
+  background-color: #F6E05E !important;
+  color: #1A202C !important;
 }
 
 @keyframes slideUp {

@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import './AirportSidebar.css';
@@ -18,18 +12,19 @@ const AirportSidebar = ({ airport, onClose }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  // --- STATE FILTER TANGGAL ---
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // ---------------------------
+
+  // --- STATE BARU UNTUK QUICK FILTER ---
+  // Default: '12m' (12 Bulan Terakhir)
+  const [quickFilter, setQuickFilter] = useState('12m'); 
+  // -------------------------------------
 
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [monthlyReports, setMonthlyReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
-  
   const scrollContainerRef = useRef(null); 
 
-  // Reset saat ganti bandara
   useEffect(() => {
       if (airport) {
           setStartDate(''); 
@@ -37,82 +32,84 @@ const AirportSidebar = ({ airport, onClose }) => {
           setStats(null);
           setSelectedMonth(null);
           setMonthlyReports([]);
+          setQuickFilter('12m'); // Reset ke 12 bulan saat ganti bandara
       }
   }, [airport]);
 
-  // Fetch Data Utama (Dipanggil saat airport berubah ATAU tanggal berubah)
   useEffect(() => {
     if (airport) {
       setLoading(true);
-      
-      // Bangun URL dinamis
       let url = `http://localhost:8000/api/airports/${airport.id}/stats`;
-      
-      // Jika kedua tanggal terisi, tambahkan query param
       if (startDate && endDate) {
           url += `?start_date=${startDate}&end_date=${endDate}`;
       }
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          setStats(data);
-          setLoading(false);
-        })
-        .catch(err => { console.error(err); setLoading(false); });
+      fetch(url).then(r=>r.json()).then(d=>{setStats(d);setLoading(false);}).catch(e=>{console.error(e);setLoading(false)});
     }
-  }, [airport, startDate, endDate]); // <-- Dependency Array Penting!
+  }, [airport, startDate, endDate]);
 
-  // Auto scroll grafik
+  // Auto scroll ke kanan saat data / filter berubah
   useEffect(() => {
     if (stats && scrollContainerRef.current) {
       scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
     }
-  }, [stats]);
+  }, [stats, quickFilter]); // <-- Tambahkan quickFilter sebagai trigger
 
-  // Helper Functions
-  const getMonthNumber = (m) => { const map = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12','Mei':'05','Agu':'08','Okt':'10','Des':'12','Agustus':'08','October':'10','December':'12'}; return map[m]||'01'; };
-  
-  const fetchMonthlyDetail = (lbl) => { 
-      if(!lbl)return; 
-      const p=lbl.split(' '); 
-      const fm=`${p[1]}-${getMonthNumber(p[0])}`; 
-      setSelectedMonth(lbl); 
-      setLoadingReports(true); 
-      // Kita tetap pakai endpoint reports yang lama untuk detail
-      fetch(`http://localhost:8000/api/airports/${airport.id}/reports?month=${fm}`)
-      .then(r=>r.json()).then(d=>{setMonthlyReports(d);setLoadingReports(false)}).catch(e=>{console.error(e);setLoadingReports(false)}); 
+  // --- LOGIKA PEMOTONGAN DATA (SLICING) ---
+  const getFilteredChartData = () => {
+    if (!stats?.monthly_trend) return { labels: [], values: [] };
+
+    const allLabels = Object.keys(stats.monthly_trend);
+    const allValues = Object.values(stats.monthly_trend);
+    const totalData = allLabels.length;
+
+    // Jika User pakai Date Picker Manual, abaikan Quick Filter (Tampilkan semua hasil filter)
+    if (startDate && endDate) {
+        return { labels: allLabels, values: allValues };
+    }
+
+    let sliceCount = totalData; // Default ALL
+
+    if (quickFilter === '6m') sliceCount = 6;
+    if (quickFilter === '12m') sliceCount = 12;
+    // Jika 'all', sliceCount tetap totalData
+
+    // Ambil N data TERAKHIR (dari belakang array)
+    const startIdx = Math.max(totalData - sliceCount, 0);
+    
+    return {
+        labels: allLabels.slice(startIdx),
+        values: allValues.slice(startIdx)
+    };
   };
-  
+
+  const { labels: chartLabels, values: chartValues } = getFilteredChartData();
+  // ----------------------------------------
+
+  const getMonthNumber = (m) => { const map = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12','Mei':'05','Agu':'08','Okt':'10','Des':'12','Agustus':'08','October':'10','December':'12'}; return map[m]||'01'; };
+  const fetchMonthlyDetail = (lbl) => { if(!lbl)return; const p=lbl.split(' '); const fm=`${p[1]}-${getMonthNumber(p[0])}`; setSelectedMonth(lbl); setLoadingReports(true); fetch(`http://localhost:8000/api/airports/${airport.id}/reports?month=${fm}`).then(r=>r.json()).then(d=>{setMonthlyReports(d);setLoadingReports(false)}).catch(e=>{console.error(e);setLoadingReports(false)}); };
   const formatDate = (ds) => { if(!ds)return'-'; try{return new Date(ds.replace(' ','T')).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}catch(e){return ds;} };
 
   const isVisible = !!airport;
 
-  // Chart Data
-  const labels = stats?.monthly_trend ? Object.keys(stats.monthly_trend) : [];
-  const values = stats?.monthly_trend ? Object.values(stats.monthly_trend) : [];
-  
+  // Chart Config (Pakai data hasil filtering tadi)
   const minBarWidth = 50; 
-  const chartWidth = Math.max(labels.length * minBarWidth, 300) + 50; 
+  const chartWidth = Math.max(chartLabels.length * minBarWidth, 300) + 50; 
 
   const chartData = {
-    labels: labels,
+    labels: chartLabels, // <-- PAKAI VARIABEL FILTERED
     datasets: [{
-      label: 'Kejadian', data: values,
+      label: 'Kejadian', 
+      data: chartValues, // <-- PAKAI VARIABEL FILTERED
       backgroundColor: (ctx) => ctx.chart.data.labels[ctx.dataIndex] === selectedMonth ? '#F6E05E' : '#4A90E2',
       borderRadius: 4, barPercentage: 0.6,
     }],
   };
 
-  // Opsi Grafik (Transparan & Tanpa Grid Y)
   const chartOptions = {
     responsive: true, maintainAspectRatio: false,
-    onClick: (evt, el) => { if (el.length > 0) fetchMonthlyDetail(labels[el[0].index]); },
+    onClick: (evt, el) => { if (el.length > 0) fetchMonthlyDetail(chartLabels[el[0].index]); },
     plugins: { legend: { display: false } },
-    scales: {
-      y: { beginAtZero: true, grid: { color: '#2D3748', drawBorder: false }, ticks: { color: '#A0AEC0' } },
-      x: { grid: { display: false }, ticks: { color: '#A0AEC0' } }
-    }
+    scales: { y: { beginAtZero: true, grid: { color: '#2D3748' }, ticks: { color: '#A0AEC0' } }, x: { grid: { display: false }, ticks: { color: '#A0AEC0' } } }
   };
 
   const sortedCategories = stats?.top_categories ? Object.entries(stats.top_categories).sort(([,a], [,b]) => b - a) : [];
@@ -123,10 +120,9 @@ const AirportSidebar = ({ airport, onClose }) => {
       {airport && (
         <div className="sidebar-content">
           
-          {/* --- HEADER STATIS --- */}
           <div className="sidebar-fixed-header">
              <button onClick={onClose} className="close-btn"><MdClose /></button>
-             <h1>{airport.name}</h1>
+             <h2>{airport.name}</h2>
              <p>{airport.city}, {airport.provinsi}</p>
              
              {/* --- DATE PICKER UI (NEW DESIGN) --- */}
@@ -151,7 +147,7 @@ const AirportSidebar = ({ airport, onClose }) => {
                     )}
                 </div>
 
-                {/* Input Container */}
+                {/* Input Container (Dibuat seperti kapsul) */}
                 <div className="date-input-group">
                     <div className="date-field">
                         <span className="date-label">Mulai</span>
@@ -181,10 +177,8 @@ const AirportSidebar = ({ airport, onClose }) => {
 
              <hr className="divider" />
 
-             {/* RANGKUMAN STATIS */}
              {stats && (
                 <div className="sidebar-section" style={{marginBottom: '15px'}}>
-                  <h3>Rangkuman Laporan</h3>
                    <div className="stats-grid-reports-2plus1">
                       <div className="stat-item"><span className="stat-value">{stats.total_all_time}</span><span className="stat-label">Total</span></div>
                       <div className="stat-item"><span className="stat-value">{Object.keys(stats.top_categories).length}</span><span className="stat-label">Kategori</span></div>
@@ -201,19 +195,31 @@ const AirportSidebar = ({ airport, onClose }) => {
              <div style={{borderBottom: '1px solid #2D3748', margin: '0 -24px'}}></div>
           </div>
 
-          {/* --- BODY SCROLLABLE --- */}
           <div className="sidebar-scroll-body">
             {loading ? <div className="loading-text">Mengambil Data...</div> : stats ? (
               <>
                 <div className="sidebar-section" style={{marginTop: '20px'}}>
-                  <h3>Tren Bulanan <span className="subtitle">(Geser)</span></h3>
                   
-                  {/* Wrapper Grafik */}
-                  <div className="chart-scroll-wrapper">
+                  {/* HEADER CHART DENGAN QUICK FILTER */}
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                      <h3 style={{margin:0}}>Tren Bulanan</h3>
+                      
+                      {/* TOMBOL QUICK FILTER (Hanya muncul jika tidak sedang pakai Date Picker) */}
+                      {(!startDate && !endDate) && (
+                          <div className="quick-filter-group">
+                              <button className={`qf-btn ${quickFilter==='6m'?'active':''}`} onClick={()=>setQuickFilter('6m')}>6B</button>
+                              <button className={`qf-btn ${quickFilter==='12m'?'active':''}`} onClick={()=>setQuickFilter('12m')}>1T</button>
+                              <button className={`qf-btn ${quickFilter==='all'?'active':''}`} onClick={()=>setQuickFilter('all')}>ALL</button>
+                          </div>
+                      )}
+                  </div>
+                  {/* ---------------------------------- */}
+
+                  <div className="chart-scroll-wrapper" ref={scrollContainerRef}>
                     <div style={{ width: '100%', minWidth: `${chartWidth}px`, height: '200px' }}>
-                       {labels.length > 0 ? (
+                       {chartLabels.length > 0 ? (
                           <Bar options={chartOptions} data={chartData} />
-                       ) : <div className="chart-container"><p className="no-data-text">Tidak ada data di periode ini.</p></div>}
+                       ) : <div className="chart-container"><p className="no-data-text">Tidak ada data.</p></div>}
                     </div>
                   </div>
                 </div>

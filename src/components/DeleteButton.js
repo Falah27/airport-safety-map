@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom'; // <-- 1. IMPORT INI
 import { MdDelete, MdClose } from 'react-icons/md';
+import toast from 'react-hot-toast';
 import './DeleteButton.css';
 
 const DeleteButton = () => {
@@ -31,14 +32,17 @@ const DeleteButton = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(data.message);
-        window.location.reload(); 
+        toast.success(data.message, { duration: 4000 });
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000); 
       } else {
-        alert('Gagal menghapus: ' + (data.error || 'Unknown error'));
+        toast.error('Gagal menghapus: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error(error);
-      alert('Terjadi kesalahan koneksi.');
+      toast.error('Terjadi kesalahan koneksi.');
     } finally {
       setLoading(false);
       setIsOpen(false); 

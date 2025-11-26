@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom'; // <-- 1. JANGAN LUPA INI
 import { MdCloudUpload } from 'react-icons/md';
 import axios from 'axios';
-// HAPUS CSS IMPORT JIKA SUDAH HAPUS FILE CSS DAN PAKAI TAILWIND, 
-// TAPI KALAU MASIH PAKAI CSS BIASA, BIARKAN INI:
+import toast from 'react-hot-toast';
 import './UploadButton.css'; 
 
 const UploadButton = () => {
@@ -25,7 +24,6 @@ const UploadButton = () => {
     formData.append('file', file);
 
     try {
-      // Pastikan URL ini sesuai dengan IP/Localhost kamu
       const response = await axios.post('http://localhost:8000/api/upload-reports', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -40,13 +38,15 @@ const UploadButton = () => {
         }
       });
 
-      alert(response.data.message);
-      window.location.reload();
+      toast.success(response.data.message, { duration: 4000 });
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
 
     } catch (error) {
       console.error(error);
       const errorMsg = error.response?.data?.error || 'Terjadi kesalahan koneksi.';
-      alert('Gagal: ' + errorMsg);
+      toast.error('Gagal: ' + errorMsg);
     } finally {
       setUploading(false);
       setProgress(0);
@@ -93,7 +93,7 @@ const UploadButton = () => {
             </div>
           </div>
         </div>,
-        document.body // <-- TEMPEL KE BODY LANGSUNG
+        document.body 
       )}
     </>
   );

@@ -134,19 +134,21 @@
 /* --- Date Picker Styles --- */
 /* --- MODERN DATE PICKER --- */
 
+/* --- MODERN DATE PICKER --- */
+
 .date-filter-wrapper {
   margin-top: 15px;
-  background-color: rgba(37, 46, 62, 0.6); /* Semi transparan */
+  background-color: rgba(37, 46, 62, 0.6); /* Lebih gelap & semi transparan */
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #4A5568;
   transition: all 0.3s ease;
 }
 
-/* Efek Glow kalau filter aktif */
+/* Efek Glow kalau filter sedang aktif */
 .date-filter-wrapper.active-filter {
   border-color: #4A90E2;
-  box-shadow: 0 0 10px rgba(74, 144, 226, 0.15);
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.1);
   background-color: rgba(37, 46, 62, 0.9);
 }
 
@@ -199,7 +201,7 @@
 .date-input-group {
   display: flex;
   align-items: center;
-  background-color: #171923; /* Lebih gelap dari sidebar */
+  background-color: #171923; /* Background sangat gelap */
   border-radius: 8px;
   padding: 4px;
   border: 1px solid #2D3748;
@@ -229,7 +231,7 @@
   font-weight: 500;
   width: 100%;
   outline: none;
-  color-scheme: dark; /* Ikon kalender browser jadi putih */
+  color-scheme: dark; /* Fitur browser: Ikon kalender jadi putih */
   cursor: pointer;
 }
 
@@ -241,7 +243,7 @@
   margin: 0 2px;
 }
 
-/* Hover effect pada input */
+/* Efek fokus halus pada container */
 .date-input-group:focus-within {
   border-color: #4A90E2;
 }
@@ -302,3 +304,34 @@
   color: #718096;
 }
 
+/* --- QUICK FILTER BUTTONS --- */
+.quick-filter-group {
+  display: flex;
+  background-color: #1A202C;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid #4A5568;
+}
+
+.qf-btn {
+  background: transparent;
+  border: none;
+  color: #A0AEC0;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.qf-btn:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.qf-btn.active {
+  background-color: #4A90E2; /* Biru aktif */
+  color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
