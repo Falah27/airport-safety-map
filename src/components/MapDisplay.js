@@ -1,16 +1,16 @@
-import React from 'react'; // Kita hapus useState/useEffect
+import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'; 
 import L from 'leaflet';
 import airportIcon from '../assets/airport.png';
 import { MdLocationOn } from 'react-icons/md'; 
 import HeatmapLayer from './HeatmapLayer';
 
-// --- KONSTANTA GLOBAL ---
+// --- KONSTANTA ---
 const INDONESIA_CENTER = [-2.5489, 118.0149];
 const DEFAULT_ZOOM = 5;
 const ZOOMED_IN_ZOOM = 13;
 
-// (Fungsi createCustomAirportIcon dan perbaikan L.Icon.Default tetap sama)
+// Custom Icon
 const createCustomAirportIcon = () => {
   return new L.Icon({
     iconUrl: airportIcon,
@@ -19,21 +19,21 @@ const createCustomAirportIcon = () => {
     popupAnchor: [0, -38],
   });
 };
+
+// Fix default icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
-// ----------------------------------------------------
 
-
-// ---- Komponen Animator (Tidak Berubah) ----
+// --- MAP ANIMATOR ---
 const MapAnimator = ({ selectedAirport }) => {
   const map = useMap(); 
   const sidebarWidth = 370; 
 
-  React.useEffect(() => { // Kita tambahkan React. di depan useEffect
+  React.useEffect(() => {
     if (selectedAirport) {
       const targetCoords = L.latLng(selectedAirport.coordinates);
       const targetPoint = map.project(targetCoords, ZOOMED_IN_ZOOM);
@@ -47,13 +47,20 @@ const MapAnimator = ({ selectedAirport }) => {
   }, [selectedAirport, map]);
 
   return null; 
-}
+};
 
-
-// ---- KOMPONEN MapDisplay UTAMA ----
-// Perhatikan sekarang dia menerima 'airports' sebagai prop
-const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode }) => { // Terima prop baru
+// --- MAIN COMPONENT ---
+const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode }) => {
   const customIcon = createCustomAirportIcon();
+  
+  // ✅ FILTER: Hanya tampilkan Cabang Utama (28) yang punya koordinat
+  const cabangUtamaOnly = airports.filter(airport => 
+    airport.level === 'cabang_utama' && 
+    airport.coordinates && 
+    airport.coordinates.length === 2
+  );
+
+  console.log('🗺️ Displaying markers:', cabangUtamaOnly.length); // Debug
 
   return (
     <MapContainer 
@@ -67,22 +74,22 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
         attribution='&copy; OpenStreetMap'
       />
       
-      {/* LOGIKA SWITCH: Jika Heatmap Mode ON -> Tampilkan Heatmap, Jika OFF -> Tampilkan Marker */}
+      {/* MODE SWITCH: Heatmap vs Marker */}
       {isHeatmapMode ? (
-        <HeatmapLayer data={airports} />
+        <HeatmapLayer data={cabangUtamaOnly} />
       ) : (
-        airports.map(airport => (
-            <Marker
+        cabangUtamaOnly.map(airport => (
+          <Marker
             key={airport.id}
             position={airport.coordinates}
             icon={customIcon}
             eventHandlers={{
-                click: () => onMarkerClick(airport),
-                mouseover: (e) => e.target.openPopup(),
-                mouseout: (e) => e.target.closePopup(),
+              click: () => onMarkerClick(airport),
+              mouseover: (e) => e.target.openPopup(),
+              mouseout: (e) => e.target.closePopup(),
             }}
-            >
-              <Popup>
+          >
+            <Popup>
               <div className="custom-popup">
                 <div className="popup-header">
                   <MdLocationOn />
@@ -97,10 +104,16 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
                     <span className="popup-label">TOTAL LAPORAN</span>
                     <span className="popup-value">{airport.total_reports}</span>
                   </div>
+                  {airport.has_children && (
+                    <div className="popup-row">
+                      <span className="popup-label">📍 CABANG PEMBANTU & UNIT</span>
+                      <span className="popup-value">Klik untuk lihat</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Popup>
-            </Marker>
+          </Marker>
         ))
       )}
 

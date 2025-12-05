@@ -10,6 +10,7 @@ import { MdSettings, MdClose, MdMap, MdLocalFireDepartment } from 'react-icons/m
 
 function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
+  const [targetChild, setTargetChild] = useState(null); // ✅ STATE BARU: Untuk menyimpan target Unit/Anak
   const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [airports, setAirports] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
@@ -30,12 +31,39 @@ function App() {
       });
   }, []); 
 
-  const handleAirportSelect = (airport) => {
-    setSelectedAirport(airport);
+  // ✅ LOGIKA BARU: MENANGANI SELEKSI DARI SEARCH BAR
+  const handleAirportSelect = (airportData) => {
+    // 1. PERBAIKAN BUG X: Jika data null (user tekan X di search bar), reset semuanya
+    if (!airportData) {
+      setSelectedAirport(null);
+      setTargetChild(null);
+      return;
+    }
+
+    // 2. Cek apakah yang dipilih adalah UNIT (punya parent_id)
+    if (airportData.parent_id) {
+      // Cari data Induknya di dalam list airports
+      const parent = airports.find(a => a.id === airportData.parent_id);
+      
+      if (parent) {
+        setSelectedAirport(parent);  // Peta fokus ke INDUK
+        setTargetChild(airportData); // Sidebar menampilkan data UNIT
+      } else {
+        // Fallback kalau induk tidak ketemu (jarang terjadi)
+        setSelectedAirport(airportData);
+        setTargetChild(null);
+      }
+    } 
+    // 3. Jika yang dipilih adalah CABANG UTAMA (Induk)
+    else {
+      setSelectedAirport(airportData);
+      setTargetChild(null); // Reset target anak
+    }
   };
 
   const handleCloseSidebar = () => {
     setSelectedAirport(null);
+    setTargetChild(null); // Reset juga target anak saat diclose
   };
 
   if (isLoading) {
@@ -48,7 +76,7 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 2. PASANG INI (Konfigurasi Dark Mode) */}
+      {/* Konfigurasi Toast/Notifikasi */}
       <Toaster 
         position="center"
         toastOptions={{
@@ -72,11 +100,14 @@ function App() {
         }}
       />
 
+      {/* ✅ PASSING PROPS BARU 'initialChild' KE SIDEBAR */}
       <AirportSidebar 
         airport={selectedAirport} 
+        initialChild={targetChild}
         onClose={handleCloseSidebar} 
       />
       
+      {/* MapSearch menggunakan handler baru */}
       <MapSearch 
         airports={airports} 
         onAirportSelect={handleAirportSelect}
@@ -86,7 +117,7 @@ function App() {
       {/* --- ADMIN SPEED DIAL (KIRI BAWAH) --- */}
       <div className="admin-fab-container">
         
-        {/* 1. TOMBOL UTAMA (GEAR) - DIRENDER PALING BAWAH SECARA VISUAL */}
+        {/* 1. TOMBOL UTAMA (GEAR) */}
         <button 
             className={`admin-fab-main ${isMenuOpen ? 'rotate' : ''}`} 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -95,10 +126,10 @@ function App() {
             {isMenuOpen ? <MdClose size={24} /> : <MdSettings size={24} />}
         </button>
 
-        {/* 2. MENU ITEMS (Akan muncul DI ATAS tombol Gear) */}
+        {/* 2. MENU ITEMS */}
         <div className={`admin-menu-items ${isMenuOpen ? 'open' : ''}`}>
             
-            {/* Item 1 (Paling Bawah/Dekat Gear): Heatmap */}
+            {/* Item 1: Heatmap */}
             <div className="fab-item-wrapper">
                 <span className="fab-tooltip">{isHeatmapMode ? "Mode Normal" : "Mode Heatmap"}</span>
                 <button 
@@ -109,7 +140,7 @@ function App() {
                 </button>
             </div>
 
-            {/* Item 2 (Tengah): Delete */}
+            {/* Item 2: Delete */}
             <div className="fab-item-wrapper">
                 <span className="fab-tooltip">Hapus Data</span>
                 <div className="fab-child">
@@ -117,7 +148,7 @@ function App() {
                 </div>
             </div>
 
-            {/* Item 3 (Paling Atas): Upload */}
+            {/* Item 3: Upload */}
             <div className="fab-item-wrapper">
                 <span className="fab-tooltip">Upload Data</span>
                 <div className="fab-child">
@@ -126,10 +157,10 @@ function App() {
             </div>
 
         </div>
-
       </div>
       {/* ------------------------------------- */}
       
+      {/* MapDisplay tetap menerima selectedAirport (Induk) agar marker fokus ke sana */}
       <MapDisplay 
         airports={airports} 
         onMarkerClick={handleAirportSelect} 

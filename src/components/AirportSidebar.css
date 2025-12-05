@@ -335,3 +335,92 @@
   color: white;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
+
+/* Struktur Organisasi Container */
+.hierarchy-tree {
+  margin-top: 15px;
+  background: #2D3748;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Header Dropdown (Tombol Klik) */
+.hierarchy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #4A5568;
+  cursor: pointer;
+  color: white;
+  font-weight: 600;
+  border-bottom: 1px solid #2D3748;
+}
+
+.hierarchy-header:hover {
+  background: #718096;
+}
+
+/* Isi List Dropdown */
+.hierarchy-list {
+  background: #1A202C;
+  padding: 5px 0;
+}
+
+.hierarchy-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 15px;
+  border-bottom: 1px solid #2D3748;
+  color: #CBD5E0;
+  font-size: 0.9em;
+}
+
+.item-count {
+  background: #4A5568;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  color: white;
+}
+
+.hierarchy-summary {
+  padding: 12px 15px; 
+  color: #CBD5E0;     
+  font-size: 0.9rem;  
+  border-top: 1px solid #4A5568; 
+  background-color: #2D3748; 
+}
+
+.hierarchy-summary p {
+  margin: 0;
+}
+
+/* Tambahkan ini */
+
+/* Item yang bisa diklik */
+.hierarchy-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.hierarchy-item.clickable:hover {
+  background-color: #2D3748; /* Highlight saat hover */
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  color: #63B3ED;
+}
+
