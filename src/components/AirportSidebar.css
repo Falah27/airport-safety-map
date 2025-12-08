@@ -64,8 +64,7 @@
   /* background-color: #2D3748; */
   border-radius: 8px;
   padding: 10px;
-  box-sizing: border-box; /* <-- PENTING: Agar padding dihitung dalam lebar */
-  
+  box-sizing: border-box;
   /* Scrollbar Grafik */
   scrollbar-width: thin;
   scrollbar-color: #4A90E2 #2D3748;

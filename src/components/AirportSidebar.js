@@ -6,9 +6,8 @@ import { MdClose, MdCalendarToday, MdFilterList, MdRefresh, MdExpandMore, MdExpa
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const AirportSidebar = ({airport, initialChild, onClose }) => {
+const AirportSidebar = ({ airport, initialChild, onClose }) => {
   // --- STATE ---
-  // 'activeAirport' adalah yang SEDANG DITAMPILKAN datanya (bisa Induk, bisa Unit)
   const [activeAirport, setActiveAirport] = useState(null);
   
   const [stats, setStats] = useState(null);
@@ -18,7 +17,7 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
   // State Filter
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [quickFilter, setQuickFilter] = useState('12m');
+  const [quickFilter, setQuickFilter] = useState('12m'); // Default 1 Tahun
   
   // State Detail & Accordion
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -27,11 +26,9 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
   const [expandedSection, setExpandedSection] = useState('pembantu'); 
   const scrollContainerRef = useRef(null);
 
-  // 1. Reset saat props 'airport' (Induk) berubah dari Peta
+  // 1. Reset saat props 'airport' berubah
   useEffect(() => {
     if (airport) {
-      // Jika ada initialChild (dari search result unit), gunakan itu sebagai activeAirport
-      // Jika tidak ada, gunakan airport (induk) sebagai activeAirport
       if (initialChild) {
         setActiveAirport(initialChild);
       } else {
@@ -40,7 +37,7 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
     }
   }, [airport, initialChild]);
 
-  // 2. Reset Filter saat ganti Active Airport (Induk <-> Unit)
+  // 2. Reset Filter saat ganti Active Airport
   useEffect(() => {
     setStats(null);
     setHierarchy(null);
@@ -52,16 +49,14 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
     setExpandedSection('pembantu');
   }, [activeAirport]);
 
-  // 3. FETCH DATA (Utama)
+  // 3. FETCH DATA
   useEffect(() => {
     if (activeAirport) {
       setLoading(true);
 
-      // A. Fetch Stats (Otomatis dapat 0 jika tidak ada data, sesuai Controller)
       let statsUrl = `http://localhost:8000/api/airports/${activeAirport.id}/stats`;
       if (startDate && endDate) statsUrl += `?start_date=${startDate}&end_date=${endDate}`;
 
-      // B. Fetch Hierarchy (Hanya jika Induk / Cabang Utama)
       let hierarchyPromise = Promise.resolve(null);
       if (activeAirport.level === 'cabang_utama') {
         hierarchyPromise = fetch(`http://localhost:8000/api/airports/${activeAirport.id}/hierarchy`).then(r => r.json()).catch(() => null);
@@ -95,7 +90,7 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
     const allLabels = Object.keys(stats.monthly_trend);
     const allValues = Object.values(stats.monthly_trend);
     
-    // Logic: Kalau unit ga ada data, controller kirim array kosong, chart jadi kosong (aman)
+    // Jika user pakai filter tanggal manual, abaikan quick filter
     if (startDate && endDate) return { labels: allLabels, values: allValues };
 
     let slice = quickFilter === '6m' ? 6 : quickFilter === '12m' ? 12 : allLabels.length;
@@ -121,7 +116,25 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
     maintainAspectRatio: false,
     onClick: (evt, el) => { if(el.length) fetchMonthlyDetail(chartLabels[el[0].index]); },
     plugins: { legend: { display: false } },
-    scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#2D3748' } } }
+    scales: { 
+      x: { 
+        display: true, 
+        grid: { display: false }, 
+        ticks: {
+          color: '#A0AEC0',
+          maxRotation: 45,  
+          minRotation: 45,
+          font: {
+            size: 10 
+          }
+        }
+      }, 
+      y: { 
+        beginAtZero: true, 
+        grid: { color: '#2D3748' }, 
+        ticks: { color: '#A0AEC0' } 
+      } 
+    }
   };
 
   const fetchMonthlyDetail = (lbl) => {
@@ -143,14 +156,11 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
     catch { return ds; }
   };
 
-  // --- NAVIGASI ANTAR UNIT ---
   const handleUnitClick = (childUnit) => {
-    // Ubah tampilan sidebar menjadi data Unit tersebut
     setActiveAirport(childUnit);
   };
 
   const handleBackToMain = () => {
-    // Kembalikan ke Induk (props.airport)
     setActiveAirport(airport);
   };
 
@@ -159,6 +169,14 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
   const sortedCategories = stats?.top_categories ? Object.entries(stats.top_categories).sort(([, a], [, b]) => b - a) : [];
   const [topName, topCount] = sortedCategories.length > 0 ? sortedCategories[0] : ['-', 0];
   const hasHierarchy = hierarchy && ((hierarchy.cabang_pembantu?.length > 0) || (hierarchy.units?.length > 0));
+
+  const getDisplayName = () => {
+    if (!activeAirport) return '';
+    if (activeAirport.level === 'cabang_utama' && !activeAirport.name.includes('Cabang') && !activeAirport.name.includes('MATSC')) {
+      return `Cabang ${activeAirport.name}`;
+    }
+    return activeAirport.name;
+  };
 
   return (
     <div className={`sidebar ${isVisible ? 'visible' : 'hidden'}`}>
@@ -169,7 +187,6 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
           <div className="sidebar-fixed-header">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               
-              {/* Tombol Back */}
               {isViewingChild ? (
                 <button onClick={handleBackToMain} className="back-btn" title="Kembali ke Induk">
                   <MdArrowBack />
@@ -181,13 +198,12 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
               {isViewingChild && <button onClick={onClose} className="close-btn"><MdClose /></button>}
             </div>
 
-            <h2 style={{ marginTop: isViewingChild ? '5px' : '0' }}>{activeAirport.name}</h2>
+            <h2 style={{ marginTop: isViewingChild ? '5px' : '0' }}>{getDisplayName()}</h2>
+            
             <p className="airport-meta">
               {activeAirport.city}, {activeAirport.provinsi} 
-              {/* {activeAirport.level && <span className="badge-level"> • {activeAirport.level.replace('_', ' ').toUpperCase()}</span>} */}
             </p>
             
-            {/* Filter Tanggal */}
             <div className={`date-filter-wrapper ${startDate && endDate ? 'active-filter' : ''}`}>
                <div className="filter-header">
                 <div className="filter-title"><MdFilterList className="filter-icon" /><span>Rentang Waktu</span></div>
@@ -202,22 +218,22 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
 
             <hr className="divider" />
 
-            {/* Stats Summary */}
+            {/* ✅ STATS: LAYOUT 2 + 1 (Dikembalikan) */}
             {stats && (
-              <div className="sidebar-section" style={{ marginBottom: '15px' }}>
-                <div className="stats-grid-reports-2plus1">
-                  <div className="stat-item"><span className="stat-value">{stats.total_all_time}</span><span className="stat-label">Total</span></div>
-                  <div className="stat-item"><span className="stat-value">{Object.keys(stats.top_categories).length}</span><span className="stat-label">Kategori</span></div>
-                  <div className="stat-item-full">
-                    <span className="stat-label">Insiden Teratas</span>
-                    <div className="top-incident-content">
-                      <span className="stat-value-name">{topName}</span>
-                      <span className="stat-value open">{topCount}</span>
-                    </div>
-                  </div>
+                <div className="sidebar-section" style={{marginBottom: '15px'}}>
+                   <div className="stats-grid-reports-2plus1">
+                      <div className="stat-item"><span className="stat-value">{stats.total_all_time}</span><span className="stat-label">Total</span></div>
+                      <div className="stat-item"><span className="stat-value">{Object.keys(stats.top_categories).length}</span><span className="stat-label">Kategori</span></div>
+                      <div className="stat-item-full">
+                        <span className="stat-label">Insiden Teratas</span>
+                        <div className="top-incident-content">
+                          <span className="stat-value-name">{topName}</span>
+                          <span className="stat-value open">{topCount}</span>
+                        </div>
+                      </div>
+                   </div>
                 </div>
-              </div>
-            )}
+             )}
             <div style={{ borderBottom: '1px solid #2D3748', margin: '0 -24px' }}></div>
           </div>
 
@@ -225,12 +241,11 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
           <div className="sidebar-scroll-body">
             {loading ? <div className="loading-text">Mengambil Data...</div> : stats ? (
               <>
-                {/* STRUKTUR ORGANISASI */}
+                {/* HIERARCHY */}
                 {!isViewingChild && hasHierarchy && (
                   <div className="sidebar-section hierarchy-section">
                     <h3>🏢 Struktur Organisasi</h3>
                     
-                    {/* Cabang Pembantu */}
                     {hierarchy.cabang_pembantu?.length > 0 && (
                       <div className="hierarchy-group">
                         <div className="hierarchy-header" onClick={() => setExpandedSection(expandedSection === 'pembantu' ? '' : 'pembantu')}>
@@ -250,7 +265,6 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
                       </div>
                     )}
 
-                    {/* Unit */}
                     {hierarchy.units?.length > 0 && (
                       <div className="hierarchy-group" style={{marginTop: '8px'}}>
                         <div className="hierarchy-header" onClick={() => setExpandedSection(expandedSection === 'unit' ? '' : 'unit')}>
@@ -269,20 +283,31 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
                         )}
                       </div>
                     )}
-                    {/* ✅ PERBAIKAN DI SINI: Gunakan activeAirport.name, bukan airport.name */}
                     <div className="hierarchy-summary"><p>Total: {hierarchy.total_children} lokasi di bawah {activeAirport.name}</p></div>
                   </div>
                 )}
 
                 <hr className="divider" />
                 
-                {/* CHART & DETAIL */}
+                {/* CHART */}
                 <div className="sidebar-section">
-                  <h3>Tren Bulanan</h3>
-                  <div style={{height: '180px'}}>
-                    {chartLabels.length > 0 ? (
-                      <Bar options={chartOptions} data={chartData} />
-                    ) : <div className="chart-container"><p className="no-data-text">Belum ada data laporan.</p></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h3 style={{ margin: 0 }}>Tren Bulanan</h3>
+                    {/* TOMBOL QUICK FILTER */}
+                    {(!startDate && !endDate) && (
+                      <div className="quick-filter-group">
+                        <button className={`qf-btn ${quickFilter === '6m' ? 'active' : ''}`} onClick={() => setQuickFilter('6m')}>6B</button>
+                        <button className={`qf-btn ${quickFilter === '12m' ? 'active' : ''}`} onClick={() => setQuickFilter('12m')}>1T</button>
+                        <button className={`qf-btn ${quickFilter === 'all' ? 'active' : ''}`} onClick={() => setQuickFilter('all')}>ALL</button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="chart-scroll-wrapper" ref={scrollContainerRef}>
+                    <div style={{ width: '100%', minWidth: '400px', height: '200px' }}>
+                      {chartLabels.length > 0 ? (
+                        <Bar options={chartOptions} data={chartData} />
+                      ) : <div className="chart-container"><p className="no-data-text">Belum ada data laporan.</p></div>}
+                    </div>
                   </div>
                 </div>
 
@@ -311,6 +336,7 @@ const AirportSidebar = ({airport, initialChild, onClose }) => {
 
                 <hr className="divider" />
 
+                {/* CATEGORIES */}
                 <div className="sidebar-section">
                   <h3>Total per Kategori</h3>
                   <div className="category-list">
