@@ -423,3 +423,13 @@
   color: #63B3ED;
 }
 
+.category-item.clickable-category {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.category-item.clickable-category:hover {
+  background-color: #2D3748;
+  border-color: #F6E05E;
+}
+
