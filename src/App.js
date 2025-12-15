@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import MapDisplay from './components/MapDisplay';
 import AirportSidebar from './components/AirportSidebar';
 import MapSearch from './components/MapSearch'; 
@@ -7,6 +7,38 @@ import DeleteButton from './components/DeleteButton';
 import { Toaster } from 'react-hot-toast';
 import './App.css'; 
 import { MdSettings, MdClose, MdMap, MdLocalFireDepartment } from 'react-icons/md';
+
+// Constants
+const API_BASE_URL = 'http://localhost:8000';
+
+const LOADING_STYLE = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '100vh',
+  backgroundColor: '#1A202C',
+  color: 'white'
+};
+
+const TOASTER_OPTIONS = {
+  style: {
+    background: '#2D3748',
+    color: '#fff',
+    border: '1px solid #4A5568',
+  },
+  success: {
+    iconTheme: {
+      primary: '#68D391',
+      secondary: '#1A202C',
+    },
+  },
+  error: {
+    iconTheme: {
+      primary: '#FC8181',
+      secondary: '#1A202C',
+    },
+  },
+};
 
 function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
@@ -21,10 +53,13 @@ function App() {
   const [globalEndDate, setGlobalEndDate] = useState('');
 
   useEffect(() => {
-    const apiUrl = 'http://localhost:8000/api/airports'; 
+    const apiUrl = `${API_BASE_URL}/api/airports`;
 
     fetch(apiUrl)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch airports');
+        return response.json();
+      })
       .then(data => {
         setAirports(data); 
         setIsLoading(false);
@@ -36,7 +71,7 @@ function App() {
   }, []); 
 
   // Logika seleksi bandara (Induk vs Unit)
-  const handleAirportSelect = (airportData) => {
+  const handleAirportSelect = useCallback((airportData) => {
     // 1. Jika data null (user tekan X di search bar), reset semuanya
     if (!airportData) {
       setSelectedAirport(null);
@@ -63,16 +98,29 @@ function App() {
       setSelectedAirport(airportData);
       setTargetChild(null); // Reset target anak
     }
-  };
+  }, [airports]);
 
-  const handleCloseSidebar = () => {
+  const handleCloseSidebar = useCallback(() => {
     setSelectedAirport(null);
     setTargetChild(null);
-  };
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen(prev => !prev);
+  }, []);
+
+  const toggleHeatmap = useCallback(() => {
+    setIsHeatmapMode(prev => !prev);
+  }, []);
+
+  const heatmapTooltip = useMemo(() => 
+    isHeatmapMode ? "Mode Normal" : "Mode Heatmap",
+    [isHeatmapMode]
+  );
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#1A202C', color: 'white' }}>
+      <div style={LOADING_STYLE}>
         <h2>Memuat data peta dan laporan... ✈️</h2>
       </div>
     );
@@ -82,25 +130,7 @@ function App() {
     <div className="app-container">
       <Toaster 
         position="center"
-        toastOptions={{
-          style: {
-            background: '#2D3748',
-            color: '#fff',
-            border: '1px solid #4A5568',
-          },
-          success: {
-            iconTheme: {
-              primary: '#68D391',
-              secondary: '#1A202C',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#FC8181',
-              secondary: '#1A202C',
-            },
-          },
-        }}
+        toastOptions={TOASTER_OPTIONS}
       />
 
       {/* ✅ 2. PASSING PROPS STATE GLOBAL KE SIDEBAR (Ini perbaikan utamanya) */}
@@ -124,7 +154,7 @@ function App() {
         
         <button 
             className={`admin-fab-main ${isMenuOpen ? 'rotate' : ''}`} 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={toggleMenu}
             title="Admin Menu"
         >
             {isMenuOpen ? <MdClose size={24} /> : <MdSettings size={24} />}
@@ -133,9 +163,9 @@ function App() {
         <div className={`admin-menu-items ${isMenuOpen ? 'open' : ''}`}>
             
             <div className="fab-item-wrapper">
-                <span className="fab-tooltip">{isHeatmapMode ? "Mode Normal" : "Mode Heatmap"}</span>
+                <span className="fab-tooltip">{heatmapTooltip}</span>
                 <button 
-                    onClick={() => setIsHeatmapMode(!isHeatmapMode)}
+                    onClick={toggleHeatmap}
                     className={`fab-child-btn ${isHeatmapMode ? 'active' : ''}`}
                 >
                     {isHeatmapMode ? <MdMap size={20} /> : <MdLocalFireDepartment size={20} />}

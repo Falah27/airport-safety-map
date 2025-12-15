@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'; 
 import L from 'leaflet';
 import airportIcon from '../assets/airport.png';
@@ -9,16 +9,16 @@ import HeatmapLayer from './HeatmapLayer';
 const INDONESIA_CENTER = [-2.5489, 118.0149];
 const DEFAULT_ZOOM = 5;
 const ZOOMED_IN_ZOOM = 13;
+const SIDEBAR_WIDTH = 370;
+const FLY_DURATION = 1.0;
 
-// Custom Icon
-const createCustomAirportIcon = () => {
-  return new L.Icon({
-    iconUrl: airportIcon,
-    iconSize: [38, 38],
-    iconAnchor: [19, 38],
-    popupAnchor: [0, -38],
-  });
-};
+// Custom Icon (Created once outside component)
+const customAirportIcon = new L.Icon({
+  iconUrl: airportIcon,
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+  popupAnchor: [0, -38],
+});
 
 // Fix default icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -29,38 +29,49 @@ L.Icon.Default.mergeOptions({
 });
 
 // --- MAP ANIMATOR ---
-const MapAnimator = ({ selectedAirport }) => {
+const MapAnimator = React.memo(({ selectedAirport }) => {
   const map = useMap(); 
-  const sidebarWidth = 370; 
 
   React.useEffect(() => {
     if (selectedAirport) {
       const targetCoords = L.latLng(selectedAirport.coordinates);
       const targetPoint = map.project(targetCoords, ZOOMED_IN_ZOOM);
-      const offsetPoint = targetPoint.subtract([sidebarWidth / 2, 0]);
+      const offsetPoint = targetPoint.subtract([SIDEBAR_WIDTH / 2, 0]);
       const newCenter = map.unproject(offsetPoint, ZOOMED_IN_ZOOM);
-      map.flyTo(newCenter, ZOOMED_IN_ZOOM, { duration: 1.0 });
+      map.flyTo(newCenter, ZOOMED_IN_ZOOM, { duration: FLY_DURATION });
     } else {
       map.closePopup(); 
-      map.flyTo(INDONESIA_CENTER, DEFAULT_ZOOM, { duration: 1.0 });
+      map.flyTo(INDONESIA_CENTER, DEFAULT_ZOOM, { duration: FLY_DURATION });
     }
   }, [selectedAirport, map]);
 
   return null; 
-};
+});
 
 // --- MAIN COMPONENT ---
 const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode }) => {
-  const customIcon = createCustomAirportIcon();
-  
   // ✅ FILTER: Hanya tampilkan Cabang Utama (28) yang punya koordinat
-  const cabangUtamaOnly = airports.filter(airport => 
-    airport.level === 'cabang_utama' && 
-    airport.coordinates && 
-    airport.coordinates.length === 2
+  // Memoize untuk avoid recompute setiap render
+  const cabangUtamaOnly = useMemo(() => 
+    airports.filter(airport => 
+      airport.level === 'cabang_utama' && 
+      airport.coordinates && 
+      airport.coordinates.length === 2
+    ),
+    [airports]
   );
 
-  console.log('🗺️ Displaying markers:', cabangUtamaOnly.length); // Debug
+  // Memoize marker click handler
+  const handleMarkerClick = useCallback((airport) => {
+    onMarkerClick(airport);
+  }, [onMarkerClick]);
+
+  // Memoize event handlers untuk marker
+  const createMarkerEventHandlers = useCallback((airport) => ({
+    click: () => handleMarkerClick(airport),
+    mouseover: (e) => e.target.openPopup(),
+    mouseout: (e) => e.target.closePopup(),
+  }), [handleMarkerClick]);
 
   return (
     <MapContainer 
@@ -82,12 +93,8 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
           <Marker
             key={airport.id}
             position={airport.coordinates}
-            icon={customIcon}
-            eventHandlers={{
-              click: () => onMarkerClick(airport),
-              mouseover: (e) => e.target.openPopup(),
-              mouseout: (e) => e.target.closePopup(),
-            }}
+            icon={customAirportIcon}
+            eventHandlers={createMarkerEventHandlers(airport)}
           >
             <Popup>
               <div className="custom-popup">

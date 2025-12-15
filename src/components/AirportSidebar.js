@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2'; 
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement 
@@ -12,6 +12,20 @@ import {
 
 // Register ArcElement untuk Pie/Doughnut Chart
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+
+// Constants
+const API_BASE_URL = 'http://localhost:8000';
+
+const MONTH_MAP = {
+  'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 
+  'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 
+  'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+};
+
+const CATEGORY_COLORS = [
+  '#F6E05E', '#4A90E2', '#68D391', '#F687B3', '#A0AEC0', 
+  '#ED8936', '#9F7AEA', '#4FD1C5', '#FC8181', '#63B3ED'
+];
 
 const AirportSidebar = ({ 
   airport, 
@@ -37,8 +51,7 @@ const AirportSidebar = ({
   const [loadingReports, setLoadingReports] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   
-  // PERBAIKAN: Menghapus 'loadingDetail' karena tidak digunakan
-  // const [loadingDetail, setLoadingDetail] = useState(false); <--- Baris ini dihapus
+  // const [loadingDetail, setLoadingDetail] = useState(false); // Dihapus karena unused
 
   const [expandedSection, setExpandedSection] = useState('pembantu'); 
   const scrollContainerRef = useRef(null);
@@ -65,14 +78,17 @@ const AirportSidebar = ({
       setLoading(true);
       setDetailView(null);
 
-      let statsUrl = `http://localhost:8000/api/airports/${activeAirport.id}/stats`;
+      let statsUrl = `${API_BASE_URL}/api/airports/${activeAirport.id}/stats`;
+      // Gunakan filter tanggal global
       if (globalStartDate && globalEndDate) {
         statsUrl += `?start_date=${globalStartDate}&end_date=${globalEndDate}`;
       }
 
       let hierarchyPromise = Promise.resolve(null);
       if (activeAirport.level === 'cabang_utama') {
-        hierarchyPromise = fetch(`http://localhost:8000/api/airports/${activeAirport.id}/hierarchy`).then(r => r.json()).catch(() => null);
+        hierarchyPromise = fetch(`${API_BASE_URL}/api/airports/${activeAirport.id}/hierarchy`)
+          .then(r => r.json())
+          .catch(() => null);
       }
 
       Promise.all([
@@ -103,8 +119,10 @@ const AirportSidebar = ({
     const allLabels = Object.keys(stats.monthly_trend);
     const allValues = Object.values(stats.monthly_trend);
     
+    // Jika ada global date, tampilkan semua sesuai range itu
     if (globalStartDate && globalEndDate) return { labels: allLabels, values: allValues };
 
+    // Slice data berdasarkan quickFilter (hanya visual chart)
     let slice = quickFilter === '6m' ? 6 : quickFilter === '12m' ? 12 : allLabels.length;
     const startIdx = Math.max(allLabels.length - slice, 0);
     return { labels: allLabels.slice(startIdx), values: allValues.slice(startIdx) };
@@ -112,10 +130,90 @@ const AirportSidebar = ({
   
   const { labels: chartLabels, values: chartValues } = getFilteredChartData();
   
-  const sortedCategories = stats?.top_categories ? Object.entries(stats.top_categories).sort(([, a], [, b]) => b - a) : [];
+  const sortedCategories = useMemo(() => 
+    stats?.top_categories 
+      ? Object.entries(stats.top_categories).sort(([, a], [, b]) => b - a) 
+      : [], 
+    [stats?.top_categories]
+  );
 
+  // --- FETCH FUNCTIONS (Defined early to avoid hoisting issues) ---
+  const fetchMonthlyDetail = useCallback((lbl) => {
+    if (!lbl) return;
+    if (detailView?.type === 'month' && detailView.title === lbl) { 
+      setDetailView(null); 
+      return; 
+    }
+    const p = lbl.split(' ');
+    const fm = `${p[1]}-${MONTH_MAP[p[0]] || '01'}`;
+    setLoadingReports(true);
+    let url = `${API_BASE_URL}/api/airports/${activeAirport.id}/reports-general?month=${fm}`; 
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { 
+        let filteredReports = d;
+        if (globalStartDate && globalEndDate) {
+            const start = new Date(globalStartDate);
+            const end = new Date(globalEndDate);
+            start.setHours(0,0,0,0);
+            end.setHours(23,59,59,999);
+            filteredReports = d.filter(report => {
+                const reportDate = new Date(report.report_date);
+                return reportDate >= start && reportDate <= end;
+            });
+        }
+        setDetailView({ type: 'month', title: lbl, reports: filteredReports });
+        setLoadingReports(false); 
+      })
+      .catch(e => { 
+        console.error(e); 
+        setLoadingReports(false); 
+      });
+  }, [activeAirport?.id, detailView?.type, detailView?.title, globalStartDate, globalEndDate]);
+
+  const fetchCategoryDetail = useCallback((categoryName) => {
+    if (detailView?.type === 'category' && detailView.title === categoryName) { 
+      setDetailView(null); 
+      return; 
+    }
+    setLoadingReports(true);
+    setDetailView({ type: 'category', title: categoryName, reports: [] }); 
+    let url = `${API_BASE_URL}/api/airports/${activeAirport.id}/reports-general?category=${encodeURIComponent(categoryName)}`;
+    
+    if (globalStartDate && globalEndDate) {
+        url += `&start_date=${globalStartDate}&end_date=${globalEndDate}`;
+    }
+    
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { 
+        setDetailView({ type: 'category', title: categoryName, reports: d });
+        setLoadingReports(false); 
+      })
+      .catch(e => { 
+        console.error(e); 
+        setLoadingReports(false); 
+      });
+  }, [activeAirport?.id, detailView?.type, detailView?.title, globalStartDate, globalEndDate]);
+
+  const openReportDetail = useCallback(async (id) => {
+    setSelectedReport({ loading: true }); 
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/reports/${id}/detail`);
+        if (!res.ok) throw new Error('Failed to fetch report detail');
+        const data = await res.json();
+        setSelectedReport(data);
+    } catch (error) {
+        console.error("Gagal ambil detail:", error);
+        setSelectedReport({ error: true });
+    }
+  }, []);
+
+  const closeReportDetail = useCallback(() => setSelectedReport(null), []);
+
+  // --- CHART CONFIGS (Defined after fetch functions) ---
   // 1. CONFIG BAR CHART (BULANAN)
-  const barChartData = {
+  const barChartData = useMemo(() => ({
     labels: chartLabels,
     datasets: [{
       label: 'Kejadian',
@@ -127,33 +225,42 @@ const AirportSidebar = ({
       borderRadius: 4,
       barPercentage: 0.6,
     }]
-  };
+  }), [chartLabels, chartValues, detailView?.type, detailView?.title]);
   
-  const barChartOptions = {
-    responsive: true, maintainAspectRatio: false,
-    onClick: (evt, el) => { if(el.length) fetchMonthlyDetail(chartLabels[el[0].index]); },
+  const barChartOptions = useMemo(() => ({
+    responsive: true, 
+    maintainAspectRatio: false,
+    onClick: (evt, el) => { 
+      if(el.length) fetchMonthlyDetail(chartLabels[el[0].index]); 
+    },
     plugins: { legend: { display: false } },
-    scales: { x: { display: true, grid: { display: false }, ticks: { color: '#A0AEC0', font: { size: 10 } } }, y: { beginAtZero: true, grid: { color: '#2D3748' }, ticks: { color: '#A0AEC0' } } } 
-  };
+    scales: { 
+      x: { 
+        display: true, 
+        grid: { display: false }, 
+        ticks: { color: '#A0AEC0', font: { size: 10 } } 
+      }, 
+      y: { 
+        beginAtZero: true, 
+        grid: { color: '#2D3748' }, 
+        ticks: { color: '#A0AEC0' } 
+      } 
+    } 
+  }), [chartLabels, fetchMonthlyDetail]);
 
   // 2. CONFIG DOUGHNUT CHART (KATEGORI)
-  const categoryColors = [
-    '#F6E05E', '#4A90E2', '#68D391', '#F687B3', '#A0AEC0', 
-    '#ED8936', '#9F7AEA', '#4FD1C5', '#FC8181', '#63B3ED'
-  ];
-
-  const doughnutData = {
+  const doughnutData = useMemo(() => ({
     labels: sortedCategories.map(([name]) => name),
     datasets: [{
       data: sortedCategories.map(([, count]) => count),
-      backgroundColor: categoryColors,
+      backgroundColor: CATEGORY_COLORS,
       borderColor: '#2D3748', 
       borderWidth: 2,
       hoverOffset: 4
     }]
-  };
+  }), [sortedCategories]);
 
-  const doughnutOptions = {
+  const doughnutOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     cutout: '65%', 
@@ -171,94 +278,55 @@ const AirportSidebar = ({
             fetchCategoryDetail(categoryName); 
         }
     }
-  };
+  }), [doughnutData.labels, fetchCategoryDetail]);
 
-  // --- FETCH FUNCTIONS ---
-  const fetchMonthlyDetail = (lbl) => {
-    if (!lbl) return;
-    if (detailView?.type === 'month' && detailView.title === lbl) { setDetailView(null); return; }
-    const map = { 'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12' };
-    const p = lbl.split(' ');
-    const fm = `${p[1]}-${map[p[0]] || '01'}`;
-    setLoadingReports(true);
-    let url = `http://localhost:8000/api/airports/${activeAirport.id}/reports-general?month=${fm}`; 
-    fetch(url).then(r => r.json()).then(d => { 
-        let filteredReports = d;
-        if (globalStartDate && globalEndDate) {
-            const start = new Date(globalStartDate);
-            const end = new Date(globalEndDate);
-            start.setHours(0,0,0,0);
-            end.setHours(23,59,59,999);
-            filteredReports = d.filter(report => {
-                const reportDate = new Date(report.report_date);
-                return reportDate >= start && reportDate <= end;
-            });
-        }
-        setDetailView({ type: 'month', title: lbl, reports: filteredReports });
-        setLoadingReports(false); 
-      }).catch(e => { console.error(e); setLoadingReports(false); });
-  };
-
-  const fetchCategoryDetail = (categoryName) => {
-    if (detailView?.type === 'category' && detailView.title === categoryName) { setDetailView(null); return; }
-    setLoadingReports(true);
-    setDetailView({ type: 'category', title: categoryName, reports: [] }); 
-    let url = `http://localhost:8000/api/airports/${activeAirport.id}/reports-general?category=${encodeURIComponent(categoryName)}`;
-    
-    if (globalStartDate && globalEndDate) {
-        url += `&start_date=${globalStartDate}&end_date=${globalEndDate}`;
+  const formatDate = useCallback((ds) => {
+    try { 
+      return new Date(ds.replace(' ', 'T')).toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      }); 
     }
-    
-    fetch(url).then(r => r.json()).then(d => { 
-        setDetailView({ type: 'category', title: categoryName, reports: d });
-        setLoadingReports(false); 
-      }).catch(e => { console.error(e); setLoadingReports(false); });
-  };
-
-  const openReportDetail = async (id) => {
-    // PERBAIKAN: Hapus setLoadingDetail(true) karena tidak ada statenya
-    setSelectedReport({ loading: true }); 
-    try {
-        const res = await fetch(`http://localhost:8000/api/reports/${id}/detail`);
-        const data = await res.json();
-        setSelectedReport(data);
-    } catch (error) {
-        console.error("Gagal ambil detail:", error);
-        setSelectedReport({ error: true });
-    }
-    // PERBAIKAN: Hapus finally block yang set loadingDetail false
-  };
-
-  const closeReportDetail = () => setSelectedReport(null);
-
-  const formatDate = (ds) => {
-    try { return new Date(ds.replace(' ', 'T')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); }
     catch { return ds; }
-  };
+  }, []);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     if (!status) return '#A0AEC0'; 
     const s = status.toLowerCase();
     if (s.includes('send to') || s.includes('analyst')) return '#68D391'; 
     if (s.includes('process') || s.includes('progress')) return '#F6E05E'; 
     if (s.includes('completed') || s.includes('closed') || s.includes('done')) return '#63B3ED'; 
     return '#A0AEC0';
-  };
+  }, []);
 
-  const handleUnitClick = (childUnit) => setActiveAirport(childUnit);
-  const handleBackToMain = () => setActiveAirport(airport);
+  const handleUnitClick = useCallback((childUnit) => setActiveAirport(childUnit), []);
+  const handleBackToMain = useCallback(() => setActiveAirport(airport), [airport]);
   
-  const isVisible = !!airport;
-  const isViewingChild = activeAirport && airport && activeAirport.id !== airport.id;
+  const isVisible = useMemo(() => !!airport, [airport]);
+  const isViewingChild = useMemo(() => 
+    activeAirport && airport && activeAirport.id !== airport.id, 
+    [activeAirport, airport]
+  );
   
-  const [topName, topCount] = sortedCategories.length > 0 ? sortedCategories[0] : ['-', 0];
-  const hasHierarchy = hierarchy && ((hierarchy.cabang_pembantu?.length > 0) || (hierarchy.units?.length > 0));
+  const [topName, topCount] = useMemo(() => 
+    sortedCategories.length > 0 ? sortedCategories[0] : ['-', 0],
+    [sortedCategories]
+  );
+  const hasHierarchy = useMemo(() => 
+    hierarchy && ((hierarchy.cabang_pembantu?.length > 0) || (hierarchy.units?.length > 0)),
+    [hierarchy]
+  );
 
-  const getDisplayName = () => {
+  const getDisplayName = useCallback(() => {
     if (!activeAirport) return '';
-    if (activeAirport.level === 'cabang_utama' && !activeAirport.name.includes('Cabang') && !activeAirport.name.includes('MATSC')) return `Cabang ${activeAirport.name}`;
+    if (activeAirport.level === 'cabang_utama' && 
+        !activeAirport.name.includes('Cabang') && 
+        !activeAirport.name.includes('MATSC')) {
+      return `Cabang ${activeAirport.name}`;
+    }
     return activeAirport.name;
-  };
+  }, [activeAirport]);
 
   const renderDetailList = (isEmbedded = false) => {
     let displayReports = detailView.reports || [];
@@ -296,8 +364,8 @@ const AirportSidebar = ({
                  <p className="loading-text" style={{ fontSize: '0.9rem', fontStyle: 'italic', padding: '10px' }}>Memuat laporan...</p>
             ) : displayReports.length > 0 ? (
                 <div className="monthly-reports-list" style={{ maxHeight: isEmbedded ? '250px' : '300px' }}>
-                    {displayReports.map((report, idx) => (
-                        <div key={idx} className="report-card-simple" onClick={() => openReportDetail(report.id)}>
+                    {displayReports.map((report) => (
+                        <div key={report.id} className="report-card-simple" onClick={() => openReportDetail(report.id)}>
                             <div className="simple-card-header">
                                 <span className="simple-date"><MdCalendarToday size={12}/> {formatDate(report.report_date)}</span>
                                 {report.status && ( <span className="simple-status" style={{ color: getStatusColor(report.status) }}>{report.status}</span> )}
@@ -315,12 +383,17 @@ const AirportSidebar = ({
   return (
     <div className={`sidebar ${isVisible ? 'visible' : 'hidden'}`}>
       <style>{`
+        /* PADDING SIDEBAR YANG BENAR */
         .sidebar-scroll-body { padding-bottom: 40px !important; }
         .monthly-reports-list { overflow-y: auto; margin-top: 10px; padding-right: 5px; padding-bottom: 20px; }
+
+        /* Search Input */
         .list-search-container { position: relative; margin-bottom: 10px; }
         .list-search-input { width: 100%; box-sizing: border-box; padding: 8px 10px 8px 30px; border-radius: 6px; border: 1px solid #4A5568; background: #1A202C; color: white; font-size: 0.85rem; outline: none; }
         .list-search-input:focus { border-color: #4A90E2; }
         .search-icon { position: absolute; left: 8px; top: 9px; color: #A0AEC0; }
+
+        /* Styles Dasar */
         .monthly-reports-list::-webkit-scrollbar { width: 6px; }
         .monthly-reports-list::-webkit-scrollbar-track { background: #2D3748; border-radius: 4px; }
         .monthly-reports-list::-webkit-scrollbar-thumb { background: #4A5568; border-radius: 4px; }
@@ -341,6 +414,8 @@ const AirportSidebar = ({
         .detail-label { display: block; font-size: 0.75rem; color: #A0AEC0; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
         .detail-value { font-size: 0.95rem; color: #fff; line-height: 1.5; }
         .detail-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; background: #2D3748; }
+
+        /* BUTTON TOGGLE STYLES */
         .toggle-btn { background: #2D3748; border: 1px solid #4A5568; color: #A0AEC0; padding: 4px 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; transition: all 0.2s; }
         .toggle-btn.active { background: #4A90E2; color: white; border-color: #4A90E2; }
         .toggle-btn:first-child { border-radius: 4px 0 0 4px; border-right: none; }
@@ -386,7 +461,8 @@ const AirportSidebar = ({
                     {stats && (
                     <div className="sidebar-section" style={{ marginBottom: '15px' }}>
                         <div className="stats-grid-reports-2plus1">
-                            <div className="stat-item"><span className="stat-value">{stats.total_all_time}</span><span className="stat-label">Total</span></div>
+                            {/* PERBAIKAN: Menampilkan Total Display (Sesuai Filter) atau Total All Time */}
+                            <div className="stat-item"><span className="stat-value">{stats.total_display !== undefined ? stats.total_display : stats.total_all_time}</span><span className="stat-label">Total</span></div>
                             <div className="stat-item"><span className="stat-value">{Object.keys(stats.top_categories).length}</span><span className="stat-label">Kategori</span></div>
                             <div className="stat-item-full">
                                 <span className="stat-label">Insiden Teratas</span>
