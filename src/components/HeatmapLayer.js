@@ -1,44 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet.heat'; // Import plugin heatmap
+import 'leaflet.heat';
 
 const HeatmapLayer = ({ data }) => {
   const map = useMap();
 
-  useEffect(() => {
-    if (!data || data.length === 0) return;
+  // Memoize points calculation to avoid recalculation on every render
+  const { points, maxVal } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { points: [], maxVal: 1 };
+    }
 
-    // 1. Siapkan Data Point: [Latitude, Longitude, Intensitas]
-    // Intensitas kita ambil dari total_reports
-    const points = data.map(airport => [
-        airport.coordinates[0],
-        airport.coordinates[1],
-        airport.total_reports // Semakin banyak laporan, semakin "panas" (merah)
+    // Prepare data points: [Latitude, Longitude, Intensity]
+    const pts = data.map(airport => [
+      airport.coordinates[0],
+      airport.coordinates[1],
+      airport.total_reports
     ]);
 
-    // 2. Cari nilai tertinggi untuk normalisasi warna
-    const maxVal = Math.max(...data.map(d => d.total_reports));
+    // Find max value for color normalization
+    const max = Math.max(...data.map(d => d.total_reports || 0), 1);
 
-    // 3. Konfigurasi Heatmap
+    return { points: pts, maxVal: max };
+  }, [data]);
+
+  useEffect(() => {
+    if (points.length === 0) return;
+
+    // Configure heatmap layer
     const heat = L.heatLayer(points, {
-        radius: 30,       // Seberapa besar radius "panas" tiap titik
-        blur: 20,         // Seberapa pudar pinggirannya
-        maxZoom: 10,      // Pada zoom berapa dia mulai pudar
-        max: maxVal > 0 ? maxVal / 2 : 1, // Sensitivitas (semakin kecil pembagi, semakin cepat merah)
-        gradient: {
-            0.4: 'blue',
-            0.6: 'lime',
-            0.8: 'yellow',
-            1.0: 'red'
-        }
+      radius: 30,
+      blur: 20,
+      maxZoom: 10,
+      max: maxVal / 2,
+      gradient: {
+        0.4: 'blue',
+        0.6: 'lime',
+        0.8: 'yellow',
+        1.0: 'red'
+      }
     }).addTo(map);
 
-    // 4. Cleanup (Hapus layer saat komponen hilang/unmount)
+    // Cleanup on unmount
     return () => {
       map.removeLayer(heat);
     };
-  }, [data, map]);
+  }, [points, maxVal, map]);
 
   return null;
 };

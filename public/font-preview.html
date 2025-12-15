@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Preview - Airport Safety Dashboard</title>
+    
+    <!-- Import All Font Options -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Sans+Pro:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: #1A202C;
+            color: #E2E8F0;
+            padding: 40px;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #F6E05E;
+            font-size: 2rem;
+        }
+        
+        .font-card {
+            background: #2D3748;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .font-card:hover {
+            border-color: #4A90E2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(74, 144, 226, 0.2);
+        }
+        
+        .font-name {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #4A90E2;
+            font-weight: 700;
+        }
+        
+        .font-description {
+            font-size: 0.9rem;
+            color: #A0AEC0;
+            margin-bottom: 20px;
+        }
+        
+        .preview-section {
+            margin-top: 20px;
+        }
+        
+        .preview-heading {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .preview-subheading {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #CBD5E0;
+            font-weight: 600;
+        }
+        
+        .preview-body {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .stats-demo {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-box {
+            background: #1A202C;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #F6E05E;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #A0AEC0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .numbers-demo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #68D391;
+            margin-top: 10px;
+        }
+        
+        /* Font Classes */
+        .font-ibm { font-family: 'IBM Plex Sans', sans-serif; }
+        .font-roboto { font-family: 'Roboto', sans-serif; }
+        .font-source { font-family: 'Source Sans Pro', sans-serif; }
+        .font-dm { font-family: 'DM Sans', sans-serif; }
+        .font-work { font-family: 'Work Sans', sans-serif; }
+        
+        .recommendation {
+            display: inline-block;
+            background: #68D391;
+            color: #1A202C;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Font Preview - Airport Safety Dashboard</h1>
+        
+        <!-- IBM Plex Sans (Current) -->
+        <div class="font-card font-ibm">
+            <div class="font-name">1. IBM Plex Sans <span style="color: #718096; font-size: 1rem;">(Current)</span></div>
+            <div class="font-description">✦ Professional corporate font • Used by IBM & enterprise apps • Excellent for data</div>
+            
+            <div class="preview-section">
+                <div class="preview-heading">Cabang Jakarta Soekarno-Hatta</div>
+                <div class="preview-subheading">Total per Kategori • Tren Bulanan</div>
+                <div class="preview-body">
+                    Detail laporan keselamatan penerbangan untuk periode Januari - Desember 2025. 
+                    Data menunjukkan peningkatan 15% dibanding tahun sebelumnya.
+                </div>
+                
+                <div class="stats-demo">
+                    <div class="stat-box">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Cabang Utama</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Unit</div>
+                    </div>
+                </div>
+                
+                <div class="numbers-demo">Numbers: 0123456789 | Date: 15/12/2025</div>
+            </div>
+        </div>
+        
+        <!-- Roboto -->
+        <div class="font-card font-roboto">
+            <div class="font-name">2. Roboto <span class="recommendation">⭐ MOST POPULAR</span></div>
+            <div class="font-description">✦ Google's flagship font • Perfect for dashboards • Material Design standard</div>
+            
+            <div class="preview-section">
+                <div class="preview-heading">Cabang Jakarta Soekarno-Hatta</div>
+                <div class="preview-subheading">Total per Kategori • Tren Bulanan</div>
+                <div class="preview-body">
+                    Detail laporan keselamatan penerbangan untuk periode Januari - Desember 2025. 
+                    Data menunjukkan peningkatan 15% dibanding tahun sebelumnya.
+                </div>
+                
+                <div class="stats-demo">
+                    <div class="stat-box">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Cabang Utama</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Unit</div>
+                    </div>
+                </div>
+                
+                <div class="numbers-demo">Numbers: 0123456789 | Date: 15/12/2025</div>
+            </div>
+        </div>
+        
+        <!-- Source Sans Pro -->
+        <div class="font-card font-source">
+            <div class="font-name">3. Source Sans Pro <span class="recommendation">⭐ RECOMMENDED</span></div>
+            <div class="font-description">✦ Adobe professional quality • Designed specifically for UI • Used by GitHub</div>
+            
+            <div class="preview-section">
+                <div class="preview-heading">Cabang Jakarta Soekarno-Hatta</div>
+                <div class="preview-subheading">Total per Kategori • Tren Bulanan</div>
+                <div class="preview-body">
+                    Detail laporan keselamatan penerbangan untuk periode Januari - Desember 2025. 
+                    Data menunjukkan peningkatan 15% dibanding tahun sebelumnya.
+                </div>
+                
+                <div class="stats-demo">
+                    <div class="stat-box">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Cabang Utama</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Unit</div>
+                    </div>
+                </div>
+                
+                <div class="numbers-demo">Numbers: 0123456789 | Date: 15/12/2025</div>
+            </div>
+        </div>
+        
+        <!-- DM Sans -->
+        <div class="font-card font-dm">
+            <div class="font-name">4. DM Sans <span class="recommendation">MODERN</span></div>
+            <div class="font-description">✦ Contemporary & geometric • Very clean • Great for modern dashboards</div>
+            
+            <div class="preview-section">
+                <div class="preview-heading">Cabang Jakarta Soekarno-Hatta</div>
+                <div class="preview-subheading">Total per Kategori • Tren Bulanan</div>
+                <div class="preview-body">
+                    Detail laporan keselamatan penerbangan untuk periode Januari - Desember 2025. 
+                    Data menunjukkan peningkatan 15% dibanding tahun sebelumnya.
+                </div>
+                
+                <div class="stats-demo">
+                    <div class="stat-box">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Cabang Utama</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Unit</div>
+                    </div>
+                </div>
+                
+                <div class="numbers-demo">Numbers: 0123456789 | Date: 15/12/2025</div>
+            </div>
+        </div>
+        
+        <!-- Work Sans -->
+        <div class="font-card font-work">
+            <div class="font-name">5. Work Sans</div>
+            <div class="font-description">✦ Professional yet friendly • High readability • Contemporary design</div>
+            
+            <div class="preview-section">
+                <div class="preview-heading">Cabang Jakarta Soekarno-Hatta</div>
+                <div class="preview-subheading">Total per Kategori • Tren Bulanan</div>
+                <div class="preview-body">
+                    Detail laporan keselamatan penerbangan untuk periode Januari - Desember 2025. 
+                    Data menunjukkan peningkatan 15% dibanding tahun sebelumnya.
+                </div>
+                
+                <div class="stats-demo">
+                    <div class="stat-box">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Cabang Utama</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Unit</div>
+                    </div>
+                </div>
+                
+                <div class="numbers-demo">Numbers: 0123456789 | Date: 15/12/2025</div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding: 30px; background: #2D3748; border-radius: 12px;">
+            <p style="font-size: 1.1rem; margin-bottom: 10px;">💡 <strong>How to Choose:</strong></p>
+            <p style="color: #A0AEC0; line-height: 1.6;">
+                <strong>Roboto</strong>: Universal & safe choice<br>
+                <strong>Source Sans Pro</strong>: Best for data-heavy dashboards (Recommended!)<br>
+                <strong>DM Sans</strong>: Modern & minimalist look<br>
+                <strong>Work Sans</strong>: Professional yet approachable
+            </p>
+        </div>
+    </div>
+</body>
+</html>

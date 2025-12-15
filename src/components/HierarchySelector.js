@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MdExpandMore, MdChevronRight } from 'react-icons/md';
 import { getAirportHierarchy } from '../services/api';
 import './HierarchySelector.css';
@@ -8,23 +8,28 @@ const HierarchySelector = ({ airport, onSelect, selectedId }) => {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(true);
 
-  useEffect(() => {
-    if (airport && airport.id) {
-      loadHierarchy(airport.id);
-    }
-  }, [airport]);
-
-  const loadHierarchy = async (airportId) => {
+  const loadHierarchy = useCallback(async (airportId) => {
     setLoading(true);
     try {
       const data = await getAirportHierarchy(airportId);
       setHierarchy(data);
     } catch (error) {
       console.error('Error loading hierarchy:', error);
+      setHierarchy(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (airport?.id) {
+      loadHierarchy(airport.id);
+    }
+  }, [airport?.id, loadHierarchy]);
+
+  const toggleExpanded = useCallback(() => {
+    setExpanded(prev => !prev);
+  }, []);
 
   if (!airport) return null;
   if (loading) {
@@ -48,7 +53,7 @@ const HierarchySelector = ({ airport, onSelect, selectedId }) => {
         {hasChildren && (
           <button 
             className="btn-toggle-hierarchy"
-            onClick={() => setExpanded(!expanded)}
+            onClick={toggleExpanded}
             title={expanded ? "Sembunyikan" : "Tampilkan"}
           >
             {expanded ? <MdExpandMore size={20} /> : <MdChevronRight size={20} />}

@@ -1,20 +1,31 @@
-import React, { useState, useRef } from 'react';
-import { createPortal } from 'react-dom'; // <-- 1. JANGAN LUPA INI
+import React, { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MdCloudUpload } from 'react-icons/md';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import './UploadButton.css'; 
+import './UploadButton.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const RELOAD_DELAY = 2000;
 
 const UploadButton = () => {
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0); 
-  const [statusText, setStatusText] = useState(''); 
+  const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
   
   const fileInputRef = useRef(null);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = useCallback(async (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    const validTypes = ['.csv', '.xlsx', '.xls'];
+    const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!validTypes.includes(fileExt)) {
+      toast.error('Format file tidak valid. Gunakan CSV atau Excel.');
+      return;
+    }
 
     setUploading(true);
     setProgress(0);
@@ -24,12 +35,12 @@ const UploadButton = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/upload-reports', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
+      const response = await axios.post(`${API_BASE_URL}/upload-reports`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / (progressEvent.total || 1)
+          );
           setProgress(percentCompleted);
           
           if (percentCompleted === 100) {
@@ -38,21 +49,28 @@ const UploadButton = () => {
         }
       });
 
-      toast.success(response.data.message, { duration: 4000 });
+      toast.success(response.data.message || 'Upload berhasil!', { duration: 4000 });
       setTimeout(() => {
         window.location.reload();
-      }, 2000);
+      }, RELOAD_DELAY);
 
     } catch (error) {
-      console.error(error);
-      const errorMsg = error.response?.data?.error || 'Terjadi kesalahan koneksi.';
-      toast.error('Gagal: ' + errorMsg);
+      console.error('Upload error:', error);
+      const errorMsg = error.response?.data?.error || 
+                       error.response?.data?.message ||
+                       'Terjadi kesalahan koneksi.';
+      toast.error('Gagal: ' + errorMsg, { duration: 5000 });
     } finally {
       setUploading(false);
       setProgress(0);
-      if(fileInputRef.current) fileInputRef.current.value = "";
+      setStatusText('');
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
+  }, []);
+
+  const handleButtonClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   return (
     <>
@@ -65,15 +83,15 @@ const UploadButton = () => {
       />
       
       <button 
-        className="btn-upload" // Atau class Tailwind jika sudah migrasi
-        onClick={() => fileInputRef.current.click()}
+        className="btn-upload"
+        onClick={handleButtonClick}
         disabled={uploading}
         title="Upload Data Excel/CSV"
       >
         <MdCloudUpload size={22} />
       </button>
 
-      {/* --- MODAL PROGRES (PAKAI PORTAL BIAR DI TENGAH) --- */}
+      {/* Upload Progress Modal (Portal) */}
       {uploading && createPortal(
         <div className="progress-overlay">
           <div className="progress-box">

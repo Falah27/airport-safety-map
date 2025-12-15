@@ -28,7 +28,7 @@ export const MAP_CONFIG = {
   ZOOMED_IN_ZOOM: 13,
   MIN_ZOOM: 4,
   MAX_ZOOM: 18,
-  SIDEBAR_WIDTH: 370, // pixels
+  SIDEBAR_WIDTH: 420, // pixels
   ANIMATION_DURATION: 1.0, // seconds
   TILE_URL: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   ATTRIBUTION: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

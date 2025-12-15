@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Select from 'react-select';
 import './MapSearch.css';
 
-// (customStyles Anda yang dark mode tetap di sini)
+// Custom styles for dark mode select (static, no need to recreate)
 const customStyles = {
   control: (provided, state) => ({
     ...provided,
@@ -36,25 +36,28 @@ const customStyles = {
 };
 
 
-// 1. TAMBAHKAN 'selectedAirport' DI SINI
 const MapSearch = ({ airports, onAirportSelect, selectedAirport }) => {
-  
-  const options = airports.map(airport => ({
-    value: airport, 
-    label: `${airport.name} (${airport.city})` 
-  }));
+  // Memoize options to avoid recreation on every render
+  const options = useMemo(() => 
+    airports.map(airport => ({
+      value: airport, 
+      label: `${airport.name} (${airport.city})` 
+    })),
+    [airports]
+  );
 
-  // 2. Perbaiki handleChange agar bisa menangani 'null' (saat 'x' di search DITEKAN)
+  // Handle selection change (including clear action)
   const handleChange = (selectedOption) => {
-    // selectedOption akan null jika user klik "x" di search box
     onAirportSelect(selectedOption ? selectedOption.value : null);
   };
 
-  // 3. LOGIKA BARU: Tentukan value-nya berdasarkan prop
-  //    Ini akan merespons saat sidebar ditutup (selectedAirport jadi null)
-  const currentValue = selectedAirport 
-    ? options.find(option => option.value.id === selectedAirport.id) 
-    : null;
+  // Find current selected option based on selectedAirport prop
+  const currentValue = useMemo(() => 
+    selectedAirport 
+      ? options.find(option => option.value.id === selectedAirport.id) 
+      : null,
+    [selectedAirport, options]
+  );
 
   return (
     <div className="search-container">

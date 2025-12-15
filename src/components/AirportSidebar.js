@@ -282,11 +282,11 @@ const AirportSidebar = ({
 
   const formatDate = useCallback((ds) => {
     try { 
-      return new Date(ds.replace(' ', 'T')).toLocaleDateString('id-ID', { 
-        day: 'numeric', 
-        month: 'short', 
-        year: 'numeric' 
-      }); 
+      const date = new Date(ds.replace(' ', 'T'));
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     }
     catch { return ds; }
   }, []);

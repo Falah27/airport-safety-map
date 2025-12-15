@@ -9,7 +9,7 @@ import HeatmapLayer from './HeatmapLayer';
 const INDONESIA_CENTER = [-2.5489, 118.0149];
 const DEFAULT_ZOOM = 5;
 const ZOOMED_IN_ZOOM = 13;
-const SIDEBAR_WIDTH = 370;
+const SIDEBAR_WIDTH = 420;
 const FLY_DURATION = 1.0;
 
 // Custom Icon (Created once outside component)
@@ -61,17 +61,10 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
     [airports]
   );
 
-  // Memoize marker click handler
+  // Event handler helpers
   const handleMarkerClick = useCallback((airport) => {
     onMarkerClick(airport);
   }, [onMarkerClick]);
-
-  // Memoize event handlers untuk marker
-  const createMarkerEventHandlers = useCallback((airport) => ({
-    click: () => handleMarkerClick(airport),
-    mouseover: (e) => e.target.openPopup(),
-    mouseout: (e) => e.target.closePopup(),
-  }), [handleMarkerClick]);
 
   return (
     <MapContainer 
@@ -94,7 +87,11 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
             key={airport.id}
             position={airport.coordinates}
             icon={customAirportIcon}
-            eventHandlers={createMarkerEventHandlers(airport)}
+            eventHandlers={{
+              click: () => handleMarkerClick(airport),
+              mouseover: (e) => e.target.openPopup(),
+              mouseout: (e) => e.target.closePopup(),
+            }}
           >
             <Popup>
               <div className="custom-popup">

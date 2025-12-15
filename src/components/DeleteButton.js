@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom'; // <-- 1. IMPORT INI
+import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MdDelete, MdClose } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import './DeleteButton.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const RELOAD_DELAY = 2000;
 
 const DeleteButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,12 +13,20 @@ const DeleteButton = () => {
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
+    // Validate dates
     if (!startDate || !endDate) {
-      alert("Harap pilih tanggal mulai dan selesai.");
+      toast.error("Harap pilih tanggal mulai dan selesai.");
       return;
     }
 
+    // Validate date range
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error("Tanggal mulai tidak boleh lebih besar dari tanggal selesai.");
+      return;
+    }
+
+    // Confirm action
     if (!window.confirm(`Yakin ingin menghapus data dari ${startDate} sampai ${endDate}?`)) {
       return;
     }
@@ -23,7 +34,7 @@ const DeleteButton = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/delete-reports', {
+      const response = await fetch(`${API_BASE_URL}/delete-reports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ start_date: startDate, end_date: endDate }),
@@ -32,41 +43,49 @@ const DeleteButton = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message, { duration: 4000 });
-        
+        toast.success(data.message || 'Data berhasil dihapus', { duration: 4000 });
+        setIsOpen(false);
         setTimeout(() => {
-            window.location.reload();
-        }, 2000); 
+          window.location.reload();
+        }, RELOAD_DELAY);
       } else {
-        toast.error('Gagal menghapus: ' + (data.error || 'Unknown error'));
+        toast.error('Gagal menghapus: ' + (data.error || data.message || 'Unknown error'));
       }
     } catch (error) {
-      console.error(error);
+      console.error('Delete error:', error);
       toast.error('Terjadi kesalahan koneksi.');
     } finally {
       setLoading(false);
-      setIsOpen(false); 
     }
-  };
+  }, [startDate, endDate]);
+
+  const openModal = useCallback(() => setIsOpen(true), []);
+  const closeModal = useCallback(() => {
+    setIsOpen(false);
+    setStartDate('');
+    setEndDate('');
+  }, []);
 
   return (
     <>
-      {/* TOMBOL TRIGGER */}
+      {/* Trigger Button */}
       <button 
         className="btn-delete-trigger" 
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         title="Hapus Data Berdasarkan Tanggal"
       >
         <MdDelete size={22} />
       </button>
 
-      {/* MODAL POPUP (DIPINDAHKAN KE BODY PAKAI PORTAL) */}
+      {/* Delete Modal (Portal) */}
       {isOpen && createPortal(
         <div className="modal-overlay">
           <div className="modal-box">
             <div className="modal-header">
               <h3>Hapus Data Laporan</h3>
-              <button onClick={() => setIsOpen(false)} className="btn-close-modal"><MdClose /></button>
+              <button onClick={closeModal} className="btn-close-modal">
+                <MdClose />
+              </button>
             </div>
             
             <div className="modal-body">
@@ -92,19 +111,21 @@ const DeleteButton = () => {
             </div>
 
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setIsOpen(false)}>Batal</button>
+              <button className="btn-cancel" onClick={closeModal} disabled={loading}>
+                Batal
+              </button>
               <button 
                 className="btn-confirm-delete" 
                 type="button"
                 onClick={handleDelete}
-                disabled={loading}
+                disabled={loading || !startDate || !endDate}
               >
                 {loading ? 'Menghapus...' : 'Hapus Data'}
               </button>
             </div>
           </div>
         </div>,
-        document.body // <-- 2. TUJUAN PORTAL (Langsung ke Body)
+        document.body
       )}
     </>
   );
