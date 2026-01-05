@@ -14,7 +14,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 // Constants
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 const MONTH_MAP = {
   'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 
@@ -78,7 +78,7 @@ const AirportSidebar = ({
       setLoading(true);
       setDetailView(null);
 
-      let statsUrl = `${API_BASE_URL}/api/airports/${activeAirport.id}/stats`;
+      let statsUrl = `${API_BASE_URL}/airports/${activeAirport.id}/stats`;
       // Gunakan filter tanggal global
       if (globalStartDate && globalEndDate) {
         statsUrl += `?start_date=${globalStartDate}&end_date=${globalEndDate}`;
@@ -86,7 +86,7 @@ const AirportSidebar = ({
 
       let hierarchyPromise = Promise.resolve(null);
       if (activeAirport.level === 'cabang_utama') {
-        hierarchyPromise = fetch(`${API_BASE_URL}/api/airports/${activeAirport.id}/hierarchy`)
+        hierarchyPromise = fetch(`${API_BASE_URL}/airports/${activeAirport.id}/hierarchy`)
           .then(r => r.json())
           .catch(() => null);
       }
@@ -147,7 +147,7 @@ const AirportSidebar = ({
     const p = lbl.split(' ');
     const fm = `${p[1]}-${MONTH_MAP[p[0]] || '01'}`;
     setLoadingReports(true);
-    let url = `${API_BASE_URL}/api/airports/${activeAirport.id}/reports-general?month=${fm}`; 
+    let url = `${API_BASE_URL}/airports/${activeAirport.id}/reports-general?month=${fm}`; 
     fetch(url)
       .then(r => r.json())
       .then(d => { 
@@ -178,7 +178,7 @@ const AirportSidebar = ({
     }
     setLoadingReports(true);
     setDetailView({ type: 'category', title: categoryName, reports: [] }); 
-    let url = `${API_BASE_URL}/api/airports/${activeAirport.id}/reports-general?category=${encodeURIComponent(categoryName)}`;
+    let url = `${API_BASE_URL}/airports/${activeAirport.id}/reports-general?category=${encodeURIComponent(categoryName)}`;
     
     if (globalStartDate && globalEndDate) {
         url += `&start_date=${globalStartDate}&end_date=${globalEndDate}`;
@@ -199,13 +199,31 @@ const AirportSidebar = ({
   const openReportDetail = useCallback(async (id) => {
     setSelectedReport({ loading: true }); 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/reports/${id}/detail`);
-        if (!res.ok) throw new Error('Failed to fetch report detail');
+        console.log(`Fetching report detail for ID: ${id}`);
+        const res = await fetch(`${API_BASE_URL}/reports/${id}`);
+        console.log('Response status:', res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('API Error:', errorText);
+            throw new Error(`Failed to fetch report detail: ${res.status}`);
+        }
+        
         const data = await res.json();
+        console.log('Report detail data:', data);
+        
+        // Pastikan data minimal memiliki struktur yang diperlukan
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid data structure received');
+        }
+        
         setSelectedReport(data);
     } catch (error) {
-        console.error("Gagal ambil detail:", error);
-        setSelectedReport({ error: true });
+        console.error("Error fetching report detail:", error);
+        setSelectedReport({ 
+            error: true, 
+            errorMessage: error.message || 'Gagal memuat data laporan'
+        });
     }
   }, []);
 
@@ -439,7 +457,11 @@ const AirportSidebar = ({
             {selectedReport ? (
                 <div style={{ marginTop: '10px' }}>
                     <h2 style={{ fontSize: '1.2rem', color: '#F6E05E', marginBottom: '5px' }}>Detail Laporan</h2>
-                    <p className="airport-meta">{selectedReport.loading ? 'Memuat...' : selectedReport.category}</p>
+                    <p className="airport-meta">
+                        {selectedReport.loading ? 'Memuat...' : 
+                         selectedReport.error ? 'Error' : 
+                         (selectedReport.category || 'Tanpa Kategori')}
+                    </p>
                 </div>
             ) : (
                 <>
@@ -482,22 +504,330 @@ const AirportSidebar = ({
                     {selectedReport.loading ? (
                         <div className="loading-text">Mengambil detail laporan...</div>
                     ) : selectedReport.error ? (
-                        <div className="no-data-text" style={{color: '#FC8181'}}>Gagal memuat data.</div>
+                        <div style={{padding: '20px', textAlign: 'center'}}>
+                            <div className="no-data-text" style={{color: '#FC8181', marginBottom: '10px'}}>❌ Gagal memuat data</div>
+                            {selectedReport.errorMessage && (
+                                <p style={{fontSize: '0.85rem', color: '#A0AEC0', marginTop: '5px'}}>{selectedReport.errorMessage}</p>
+                            )}
+                            <button 
+                                onClick={() => setSelectedReport(null)} 
+                                style={{
+                                    marginTop: '15px',
+                                    padding: '8px 16px',
+                                    background: '#4A5568',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Kembali
+                            </button>
+                        </div>
                     ) : (
                         <div style={{ padding: '10px 0' }}>
+                             {/* INFORMASI DASAR */}
+                             <div className="detail-kv-row">
+                                <span className="detail-label">ID Effort</span>
+                                <span className="detail-value" style={{fontWeight: 'bold', color: '#F6E05E'}}>{selectedReport.id_effort || '-'}</span>
+                             </div>
+
                              <div className="detail-kv-row">
                                 <span className="detail-label">Kategori</span>
-                                <span className="detail-value" style={{fontWeight: 'bold', color: '#4A90E2'}}>{selectedReport.category}</span>
+                                <span className="detail-value" style={{fontWeight: 'bold', color: '#4A90E2'}}>{selectedReport.category || 'Tanpa Kategori'}</span>
                              </div>
+
                              <div className="detail-kv-row">
-                                <div style={{display: 'flex', gap: '20px'}}>
-                                    <div><span className="detail-label">Tanggal</span><span className="detail-value"><MdCalendarToday size={14} /> {formatDate(selectedReport.report_date)}</span></div>
-                                    <div><span className="detail-label">Status</span><span className="detail-badge" style={{color: getStatusColor(selectedReport.status)}}>{selectedReport.status}</span></div>
+                                <span className="detail-label">Klasifikasi</span>
+                                <span className="detail-value">{selectedReport.classification || '-'}</span>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Tanggal Kejadian</span>
+                                        <span className="detail-value">
+                                            <MdCalendarToday size={14} /> 
+                                            {selectedReport.date ? formatDate(selectedReport.date) : (selectedReport.report_date ? formatDate(selectedReport.report_date) : '-')}
+                                        </span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Tanggal Input</span>
+                                        <span className="detail-value">
+                                            <MdCalendarToday size={14} /> 
+                                            {selectedReport.input_date ? formatDate(selectedReport.input_date) : '-'}
+                                        </span>
+                                    </div>
                                 </div>
                              </div>
-                             <div className="detail-kv-row"><span className="detail-label"><MdDescription size={14}/> Deskripsi</span><p className="detail-value">{selectedReport.description || "-"}</p></div>
-                             <div className="detail-kv-row"><span className="detail-label"><MdLocationOn size={14}/> Lokasi</span><p className="detail-value">{selectedReport.location || "-"}</p></div>
-                             {selectedReport.evidence && <div className="detail-kv-row"><span className="detail-label"><MdInfo size={14}/> Bukti Foto</span><div style={{ marginTop: '8px', background: '#1A202C', padding: '20px', borderRadius: '8px', textAlign: 'center', border: '1px dashed #4A5568' }}><span style={{fontSize: '0.8rem', color: '#718096'}}>Preview Foto belum tersedia</span></div></div>}
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Status Investigasi</span>
+                                        <span className="detail-badge" style={{color: getStatusColor(selectedReport.status_investigasi || selectedReport.status || '')}}>
+                                            {selectedReport.status_investigasi || selectedReport.status || 'Tidak Diketahui'}
+                                        </span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Status Analyst</span>
+                                        <span className="detail-badge" style={{color: getStatusColor(selectedReport.status_analyst || '')}}>
+                                            {selectedReport.status_analyst || '-'}
+                                        </span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {/* LOKASI & UNIT */}
+                             <div className="detail-kv-row">
+                                <span className="detail-label"><MdLocationOn size={14}/> Branch</span>
+                                <p className="detail-value">{selectedReport.branch || '-'}</p>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label"><MdLocationOn size={14}/> Lokasi</span>
+                                <p className="detail-value">{selectedReport.location || "Lokasi tidak tercatat"}</p>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label">ATS Unit</span>
+                                <p className="detail-value">{selectedReport.ats_unit || '-'}</p>
+                             </div>
+
+                             {/* INFORMASI PENERBANGAN */}
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Aircraft ID</span>
+                                        <span className="detail-value">{selectedReport.aircraft_id || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Aircraft Reg</span>
+                                        <span className="detail-value">{selectedReport.aircraft_reg || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Type</span>
+                                        <span className="detail-value">{selectedReport.type || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Operator</span>
+                                        <span className="detail-value">{selectedReport.operator || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label">PIC</span>
+                                <span className="detail-value">{selectedReport.pic || '-'}</span>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">SSR Code</span>
+                                        <span className="detail-value">{selectedReport.ssr_code || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Flight Rules</span>
+                                        <span className="detail-value">{selectedReport.frules || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Flight Phase</span>
+                                        <span className="detail-value">{selectedReport.fphase || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Flight Number</span>
+                                        <span className="detail-value">{selectedReport.flight || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">ADEP (Departure)</span>
+                                        <span className="detail-value">{selectedReport.adep || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">ADES (Arrival)</span>
+                                        <span className="detail-value">{selectedReport.ades || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Type F</span>
+                                        <span className="detail-value">{selectedReport.typef || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">DTA</span>
+                                        <span className="detail-value">{selectedReport.dta || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label">ITP</span>
+                                <span className="detail-value">{selectedReport.itp || '-'}</span>
+                             </div>
+
+                             {/* POSISI & JARAK */}
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Latitude</span>
+                                        <span className="detail-value">{selectedReport.lat || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Longitude</span>
+                                        <span className="detail-value">{selectedReport.long || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Altitude</span>
+                                        <span className="detail-value">{selectedReport.alt || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Time QAM</span>
+                                        <span className="detail-value">{selectedReport.time_qam || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Horizontal Distance</span>
+                                        <span className="detail-value">{selectedReport.horizontal_dist || '-'}</span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Vertical Distance</span>
+                                        <span className="detail-value">{selectedReport.vertical_dist || '-'}</span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {/* CUACA */}
+                             <div className="detail-kv-row">
+                                <span className="detail-label">Weather</span>
+                                <p className="detail-value">
+                                    {typeof selectedReport.weather === 'object' && selectedReport.weather !== null 
+                                        ? (selectedReport.weather.condition || JSON.stringify(selectedReport.weather))
+                                        : (selectedReport.weather || '-')}
+                                </p>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Wind</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.wind === 'object' && selectedReport.wind !== null
+                                                ? JSON.stringify(selectedReport.wind)
+                                                : (selectedReport.wind || (typeof selectedReport.weather === 'object' && selectedReport.weather?.wind) || '-')}
+                                        </span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Visibility</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.vis === 'object' && selectedReport.vis !== null
+                                                ? JSON.stringify(selectedReport.vis)
+                                                : (selectedReport.vis || (typeof selectedReport.weather === 'object' && selectedReport.weather?.visibility) || '-')}
+                                        </span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Pressure WX</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.pres_wx === 'object' && selectedReport.pres_wx !== null
+                                                ? JSON.stringify(selectedReport.pres_wx)
+                                                : (selectedReport.pres_wx || '-')}
+                                        </span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Cloud</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.cloud === 'object' && selectedReport.cloud !== null
+                                                ? JSON.stringify(selectedReport.cloud)
+                                                : (selectedReport.cloud || (typeof selectedReport.weather === 'object' && selectedReport.weather?.cloud) || '-')}
+                                        </span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Temperature</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.temp === 'object' && selectedReport.temp !== null
+                                                ? JSON.stringify(selectedReport.temp)
+                                                : (selectedReport.temp || (typeof selectedReport.weather === 'object' && selectedReport.weather?.temperature) || '-')}
+                                        </span>
+                                    </div>
+                                    <div style={{flex: '1', minWidth: '150px'}}>
+                                        <span className="detail-label">Altimeter</span>
+                                        <span className="detail-value">
+                                            {typeof selectedReport.altimeter === 'object' && selectedReport.altimeter !== null
+                                                ? JSON.stringify(selectedReport.altimeter)
+                                                : (selectedReport.altimeter || '-')}
+                                        </span>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {/* DESKRIPSI & INFO TAMBAHAN */}
+                             <div className="detail-kv-row">
+                                <span className="detail-label"><MdDescription size={14}/> Deskripsi (Des)</span>
+                                <p className="detail-value">{selectedReport.des || selectedReport.description || "Tidak ada deskripsi"}</p>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label"><MdInfo size={14}/> Additional Info</span>
+                                <p className="detail-value">{selectedReport.add_info || '-'}</p>
+                             </div>
+
+                             <div className="detail-kv-row">
+                                <span className="detail-label">Remark</span>
+                                <p className="detail-value">{selectedReport.remak || '-'}</p>
+                             </div>
+
+                             {selectedReport.evidence && (
+                                <div className="detail-kv-row">
+                                    <span className="detail-label"><MdInfo size={14}/> Bukti Foto</span>
+                                    <div style={{ 
+                                        marginTop: '8px', 
+                                        background: '#1A202C', 
+                                        padding: '20px', 
+                                        borderRadius: '8px', 
+                                        textAlign: 'center', 
+                                        border: '1px dashed #4A5568' 
+                                    }}>
+                                        <span style={{fontSize: '0.8rem', color: '#718096'}}>Preview Foto belum tersedia</span>
+                                    </div>
+                                </div>
+                             )}
                         </div>
                     )}
                 </div>
