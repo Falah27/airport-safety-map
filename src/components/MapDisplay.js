@@ -20,6 +20,9 @@ const customAirportIcon = new L.Icon({
   popupAnchor: [0, -38],
 });
 
+// Fallback default marker icon
+const defaultIcon = new L.Icon.Default();
+
 // Fix default icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -52,14 +55,15 @@ const MapAnimator = React.memo(({ selectedAirport }) => {
 const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode }) => {
   // ✅ FILTER: Hanya tampilkan Cabang Utama (28) yang punya koordinat
   // Memoize untuk avoid recompute setiap render
-  const cabangUtamaOnly = useMemo(() => 
-    airports.filter(airport => 
+  const cabangUtamaOnly = useMemo(() => {
+    const filtered = airports.filter(airport => 
       airport.level === 'cabang_utama' && 
       airport.coordinates && 
       airport.coordinates.length === 2
-    ),
-    [airports]
-  );
+    );
+    
+    return filtered;
+  }, [airports]);
 
   // Event handler helpers
   const handleMarkerClick = useCallback((airport) => {
@@ -82,43 +86,43 @@ const MapDisplay = ({ airports, onMarkerClick, selectedAirport, isHeatmapMode })
       {isHeatmapMode ? (
         <HeatmapLayer data={cabangUtamaOnly} />
       ) : (
-        cabangUtamaOnly.map(airport => (
-          <Marker
-            key={airport.id}
-            position={airport.coordinates}
-            icon={customAirportIcon}
-            eventHandlers={{
-              click: () => handleMarkerClick(airport),
-              mouseover: (e) => e.target.openPopup(),
-              mouseout: (e) => e.target.closePopup(),
-            }}
-          >
-            <Popup>
-              <div className="custom-popup">
-                <div className="popup-header">
-                  <MdLocationOn />
-                  <h4>{airport.name}</h4>
-                </div>
-                <div className="popup-content">
-                  <div className="popup-row">
-                    <span className="popup-label">KOTA</span>
-                    <span className="popup-value">{airport.city}</span>
-                  </div>
-                  <div className="popup-row">
-                    <span className="popup-label">TOTAL LAPORAN</span>
-                    <span className="popup-value">{airport.total_reports}</span>
-                  </div>
-                  {airport.has_children && (
-                    <div className="popup-row">
-                      <span className="popup-label">📍 CABANG PEMBANTU & UNIT</span>
-                      <span className="popup-value">Klik untuk lihat</span>
+        cabangUtamaOnly.map((airport, index) => (
+              <Marker
+                key={airport.id}
+                position={airport.coordinates}
+                icon={customAirportIcon}
+                eventHandlers={{
+                  click: () => handleMarkerClick(airport),
+                  mouseover: (e) => e.target.openPopup(),
+                  mouseout: (e) => e.target.closePopup(),
+                }}
+              >
+                <Popup>
+                  <div className="custom-popup">
+                    <div className="popup-header">
+                      <MdLocationOn />
+                      <h4>{airport.name}</h4>
                     </div>
-                  )}
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))
+                    <div className="popup-content">
+                      <div className="popup-row">
+                        <span className="popup-label">KOTA</span>
+                        <span className="popup-value">{airport.city}</span>
+                      </div>
+                      <div className="popup-row">
+                        <span className="popup-label">TOTAL LAPORAN</span>
+                        <span className="popup-value">{airport.total_reports}</span>
+                      </div>
+                      {airport.has_children && (
+                        <div className="popup-row">
+                          <span className="popup-label">📍 CABANG PEMBANTU & UNIT</span>
+                          <span className="popup-value">Klik untuk lihat</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))
       )}
 
       <MapAnimator selectedAirport={selectedAirport} />

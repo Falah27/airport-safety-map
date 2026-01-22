@@ -11,6 +11,21 @@
   height: 100%;
 }
 
+/* 🔧 FIX: Pastikan marker icon visible */
+.leaflet-marker-icon {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+.leaflet-pane {
+  z-index: 400 !important;
+}
+
 /* POP-UP */
 
 .app-container .leaflet-popup-content-wrapper {

@@ -4,12 +4,21 @@ import AirportSidebar from './components/AirportSidebar';
 import MapSearch from './components/MapSearch'; 
 import UploadButton from './components/UploadButton';
 import DeleteButton from './components/DeleteButton';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import './App.css'; 
 import { MdSettings, MdClose, MdMap, MdLocalFireDepartment } from 'react-icons/md';
 
-// Constants
-const API_BASE_URL = 'http://localhost:8000';
+// ✅ KONSISTENSI URL
+const getApiBaseUrl = () => {
+  let url = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  url = url.replace(/\/$/, "");
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+
+const API_BASE_URL = getApiBaseUrl(); 
 
 const LOADING_STYLE = {
   display: 'flex',
@@ -42,61 +51,86 @@ const TOASTER_OPTIONS = {
 
 function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
-  const [targetChild, setTargetChild] = useState(null); // State untuk target Unit/Anak
+  const [targetChild, setTargetChild] = useState(null); 
   const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [airports, setAirports] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // ✅ 1. STATE GLOBAL TANGGAL (Wajib ada agar tidak error "not a function")
+  // ✅ 1. STATE GLOBAL TANGGAL
   const [globalStartDate, setGlobalStartDate] = useState('');
   const [globalEndDate, setGlobalEndDate] = useState('');
 
   useEffect(() => {
-    const apiUrl = `${API_BASE_URL}/api/airports`;
+    const apiUrl = `${API_BASE_URL}/airports`;
+    
+    console.log("Fetching data from:", apiUrl); 
 
-    fetch(apiUrl)
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
       .then(response => {
-        if (!response.ok) throw new Error('Failed to fetch airports');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         return response.json();
       })
       .then(data => {
+        const markersWithCoords = data.filter(a => 
+          a.level === 'cabang_utama' && 
+          a.coordinates && 
+          a.coordinates.length === 2
+        );
+        
+        if (markersWithCoords.length === 0) {
+          toast('Data dimuat, tapi tidak ada koordinat valid', { icon: '⚠️' });
+        }
+        
         setAirports(data); 
         setIsLoading(false);
       })
       .catch(error => {
         console.error("Error fetching airport data:", error);
+        
+        let errorMsg = 'Gagal memuat data bandara';
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMsg = `Gagal koneksi ke Backend. Pastikan server Laravel jalan.`;
+        } else if (error.message.includes('404')) {
+          errorMsg = 'Endpoint tidak ditemukan (404). Cek routes/api.php di Laravel.';
+        } else {
+          errorMsg = error.message;
+        }
+        
+        toast.error(errorMsg, { duration: 6000 });
         setIsLoading(false); 
       });
   }, []); 
 
-  // Logika seleksi bandara (Induk vs Unit)
   const handleAirportSelect = useCallback((airportData) => {
-    // 1. Jika data null (user tekan X di search bar), reset semuanya
     if (!airportData) {
       setSelectedAirport(null);
       setTargetChild(null);
       return;
     }
 
-    // 2. Cek apakah yang dipilih adalah UNIT (punya parent_id)
     if (airportData.parent_id) {
-      // Cari data Induknya di dalam list airports
       const parent = airports.find(a => a.id === airportData.parent_id);
       
       if (parent) {
-        setSelectedAirport(parent);  // Peta fokus ke INDUK
-        setTargetChild(airportData); // Sidebar menampilkan data UNIT
+        setSelectedAirport(parent);  
+        setTargetChild(airportData); 
       } else {
-        // Fallback kalau induk tidak ketemu
         setSelectedAirport(airportData);
         setTargetChild(null);
       }
     } 
-    // 3. Jika yang dipilih adalah CABANG UTAMA (Induk)
     else {
       setSelectedAirport(airportData);
-      setTargetChild(null); // Reset target anak
+      setTargetChild(null); 
     }
   }, [airports]);
 
@@ -121,6 +155,7 @@ function App() {
   if (isLoading) {
     return (
       <div style={LOADING_STYLE}>
+        {/* Tulisan kecil debug "Connecting to..." sudah dihapus di sini */}
         <h2>Memuat data peta dan laporan... ✈️</h2>
       </div>
     );
@@ -133,7 +168,6 @@ function App() {
         toastOptions={TOASTER_OPTIONS}
       />
 
-      {/* ✅ 2. PASSING PROPS STATE GLOBAL KE SIDEBAR (Ini perbaikan utamanya) */}
       <AirportSidebar 
         airport={selectedAirport} 
         initialChild={targetChild}

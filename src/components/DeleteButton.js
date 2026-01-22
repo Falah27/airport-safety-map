@@ -4,7 +4,16 @@ import { MdDelete, MdClose } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import './DeleteButton.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const getApiBaseUrl = () => {
+  let url = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  url = url.replace(/\/$/, "");
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const RELOAD_DELAY = 2000;
 
 const DeleteButton = () => {
@@ -34,8 +43,8 @@ const DeleteButton = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/delete-reports`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/reports/range`, {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ start_date: startDate, end_date: endDate }),
       });
